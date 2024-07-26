@@ -329,7 +329,7 @@ mem_gets(BIO *bio, char *out, int out_len)
 {
 	struct bio_mem *bm = bio->ptr;
 	int i, out_max;
-	char *p;
+	unsigned char *p;
 	int ret = -1;
 
 	BIO_clear_retry_flags(bio);

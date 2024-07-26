@@ -267,7 +267,7 @@ BN_asc2bn(BIGNUM **bnp, const char *s)
 	if ((s_len = strlen(s)) == 0)
 		return 0;
 
-	CBS_init(&cbs, s, s_len);
+	CBS_init(&cbs, (uint8_t *)s, s_len);
 
 	/* Handle negative sign. */
 	if (!CBS_peek_u8(&cbs, &v))
@@ -379,7 +379,7 @@ BN_bn2dec(const BIGNUM *bn)
 	CBB_cleanup(&cbb);
 	freezero(data, data_len);
 
-	return s;
+	return (char *)s;
 }
 LCRYPTO_ALIAS(BN_bn2dec);
 

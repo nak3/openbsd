@@ -528,7 +528,7 @@ static uint8_t tls12_server_response_with_cert[] = {
 };
 
 struct tlslegacy_client_test {
-	const unsigned char *desc;
+	const char* desc;
 	unsigned char *server_response;
 	const size_t server_response_len;
 	const SSL_METHOD *(*ssl_method)(void);

@@ -238,8 +238,8 @@ sm4_ctr_cipher(EVP_CIPHER_CTX *ctx, unsigned char *out, const unsigned char *in,
 {
 	EVP_SM4_KEY *key = ((EVP_SM4_KEY *)(ctx)->cipher_data);
 
-	CRYPTO_ctr128_encrypt(in, out, len, &key->ks, ctx->iv, ctx->buf,
-	    &ctx->num, (block128_f)SM4_encrypt);
+        CRYPTO_ctr128_encrypt(in, out, len, &key->ks, ctx->iv, ctx->buf,
+            (unsigned int *)&ctx->num, (block128_f)SM4_encrypt);
 	return 1;
 }
 
