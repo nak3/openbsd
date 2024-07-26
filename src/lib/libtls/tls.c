@@ -285,7 +285,7 @@ int
 tls_cert_hash(X509 *cert, char **hash)
 {
 	unsigned char d[EVP_MAX_MD_SIZE];
-       	char *dhex = NULL;
+	char *dhex = NULL;
 	unsigned int dlen, rv = -1;
 
 	free(*hash);
