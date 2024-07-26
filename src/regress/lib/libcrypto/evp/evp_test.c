@@ -857,7 +857,7 @@ evp_kdf_tls1_prf_basic(void)
 #define TLS_PRF_OUT_LEN 128
 
 static const struct tls_prf_test {
-	const unsigned char *desc;
+	const unsigned char desc[30];
 	const EVP_MD *(*md)(void);
 	const uint16_t cipher_value;
 	const unsigned char out[TLS_PRF_OUT_LEN];
