@@ -460,7 +460,7 @@ static int
 tls13_record_layer_set_traffic_key(const EVP_AEAD *aead, const EVP_MD *hash,
     struct tls13_record_protection *rp, struct tls13_secret *traffic_key)
 {
-	struct tls13_secret context = { .data = "", .len = 0 };
+	struct tls13_secret context = { .data = (uint8_t *)"", .len = 0 };
 	struct tls13_secret key = { .data = NULL, .len = 0 };
 	int ret = 0;
 

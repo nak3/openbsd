@@ -160,8 +160,9 @@ tls13_hkdf_expand_label(struct tls13_secret *out, const EVP_MD *digest,
     const struct tls13_secret *secret, const char *label,
     const struct tls13_secret *context)
 {
-	return tls13_hkdf_expand_label_with_length(out, digest, secret, label,
-	    strlen(label), context);
+
+        return tls13_hkdf_expand_label_with_length(out, digest, secret, (const uint8_t *)label,
+            strlen(label), context);
 }
 
 int
@@ -185,13 +186,13 @@ tls13_hkdf_expand_label_with_length(struct tls13_secret *out,
 		goto err;
 	if (!CBB_add_u8_length_prefixed(&cbb, &child))
 		goto err;
-	if (!CBB_add_bytes(&child, tls13_plabel, strlen(tls13_plabel)))
+	if (!CBB_add_bytes(&child, (const uint8_t *)tls13_plabel, strlen(tls13_plabel)))
 		goto err;
 	if (!CBB_add_bytes(&child, label, label_len))
 		goto err;
 	if (!CBB_add_u8_length_prefixed(&cbb, &child))
 		goto err;
-	if (!CBB_add_bytes(&child, context->data, context->len))
+	if (!CBB_add_bytes(&child, (const uint8_t *)label, label_len))
 		goto err;
 	if (!CBB_finish(&cbb, &hkdf_label, &hkdf_label_len))
 		goto err;
@@ -376,7 +377,7 @@ tls13_update_client_traffic_secret(struct tls13_secrets *secrets)
 int
 tls13_update_server_traffic_secret(struct tls13_secrets *secrets)
 {
-	struct tls13_secret context = { .data = "", .len = 0 };
+	struct tls13_secret context = { .data = (uint8_t *)"", .len = 0 };
 
 	if (!secrets->init_done || !secrets->early_done ||
 	    !secrets->handshake_done || !secrets->schedule_done)
@@ -423,7 +424,7 @@ tls13_exporter(struct tls13_ctx *ctx, const uint8_t *label, size_t label_len,
 
 	/* In TLSv1.3 no context is equivalent to an empty context. */
 	if (context_value == NULL) {
-		context_value = "";
+		context_value = (const uint8_t *)"";
 		context_value_len = 0;
 	}
 

@@ -290,10 +290,10 @@ tls_cert_hash(X509 *cert, char **hash)
 	free(*hash);
 	*hash = NULL;
 
-	if (X509_digest(cert, EVP_sha256(), d, &dlen) != 1)
+	if (X509_digest(cert, EVP_sha256(), (unsigned char*)d, (unsigned int*)&dlen) != 1)
 		goto err;
 
-	if (tls_hex_string(d, dlen, &dhex, NULL) != 0)
+	if (tls_hex_string((const unsigned char*)d, dlen, &dhex, NULL) != 0)
 		goto err;
 
 	if (asprintf(hash, "SHA256:%s", dhex) == -1) {
@@ -317,10 +317,10 @@ tls_cert_pubkey_hash(X509 *cert, char **hash)
 	free(*hash);
 	*hash = NULL;
 
-	if (X509_pubkey_digest(cert, EVP_sha256(), d, &dlen) != 1)
+	if (X509_pubkey_digest(cert, EVP_sha256(), (unsigned char*)d, (unsigned int*)&dlen) != 1)
 		goto err;
 
-	if (tls_hex_string(d, dlen, &dhex, NULL) != 0)
+	if (tls_hex_string((const unsigned char*)d, dlen, &dhex, NULL) != 0)
 		goto err;
 
 	if (asprintf(hash, "SHA256:%s", dhex) == -1) {
@@ -555,7 +555,7 @@ tls_configure_ssl(struct tls *ctx, SSL_CTX *ssl_ctx)
 		SSL_CTX_set_options(ssl_ctx, SSL_OP_NO_TLSv1_3);
 
 	if (ctx->config->alpn != NULL) {
-		if (SSL_CTX_set_alpn_protos(ssl_ctx, ctx->config->alpn,
+		if (SSL_CTX_set_alpn_protos(ssl_ctx, (const unsigned char *)ctx->config->alpn,
 		    ctx->config->alpn_len) != 0) {
 			tls_set_errorx(ctx, TLS_ERROR_UNKNOWN,
 			    "failed to set alpn");
