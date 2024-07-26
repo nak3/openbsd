@@ -378,7 +378,8 @@ tls13_new_session_ticket_recv(struct tls13_ctx *ctx, CBS *cbs)
 	uint32_t ticket_lifetime, ticket_age_add;
 	CBS ticket_nonce, ticket;
 	SSL_SESSION *sess = NULL;
-	int alert, session_id_length;
+	int alert;
+	unsigned int session_id_length;
 	ssize_t ret = 0;
 
 	memset(&nonce, 0, sizeof(nonce));
