@@ -284,8 +284,9 @@ tls_configure(struct tls *ctx, struct tls_config *config)
 int
 tls_cert_hash(X509 *cert, char **hash)
 {
-	unsigned char d[EVP_MAX_MD_SIZE], *dhex = NULL;
-	int dlen, rv = -1;
+	unsigned char d[EVP_MAX_MD_SIZE];
+       	char *dhex = NULL;
+	unsigned int dlen, rv = -1;
 
 	free(*hash);
 	*hash = NULL;
@@ -311,8 +312,10 @@ tls_cert_hash(X509 *cert, char **hash)
 int
 tls_cert_pubkey_hash(X509 *cert, char **hash)
 {
-	char d[EVP_MAX_MD_SIZE], *dhex = NULL;
-	int dlen, rv = -1;
+	unsigned char d[EVP_MAX_MD_SIZE];
+	char *dhex = NULL;
+	unsigned int dlen;
+       	int rv = -1;
 
 	free(*hash);
 	*hash = NULL;
