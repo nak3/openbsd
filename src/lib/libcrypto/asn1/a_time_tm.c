@@ -401,7 +401,7 @@ ASN1_TIME_check(const ASN1_TIME *t)
 {
 	if (t->type != V_ASN1_GENERALIZEDTIME && t->type != V_ASN1_UTCTIME)
 		return 0;
-	return t->type == ASN1_time_parse(t->data, t->length, NULL, t->type);
+	return t->type == ASN1_time_parse((const char *)t->data, t->length, NULL, t->type);
 }
 LCRYPTO_ALIAS(ASN1_TIME_check);
 
@@ -414,7 +414,7 @@ ASN1_TIME_to_generalizedtime(const ASN1_TIME *t, ASN1_GENERALIZEDTIME **out)
 	if (t->type != V_ASN1_GENERALIZEDTIME && t->type != V_ASN1_UTCTIME)
 		goto err;
 
-	if (t->type != ASN1_time_parse(t->data, t->length, &tm, t->type))
+	if (t->type != ASN1_time_parse((const char *)t->data, t->length, &tm, t->type))
 		goto err;
 
 	if (out == NULL || (agt = *out) == NULL)
@@ -460,7 +460,7 @@ ASN1_TIME_cmp_time_t_internal(const ASN1_TIME *s, time_t t2, int mode)
 	 * one of those pervasive things from OpenSSL we must continue with.
 	 */
 
-	if (ASN1_time_parse(s->data, s->length, &tm1, mode) == -1)
+	if (ASN1_time_parse((const char *)s->data, s->length, &tm1, mode) == -1)
 		return -2;
 
 	if (!asn1_time_time_t_to_tm(&t2, &tm2))
@@ -480,10 +480,10 @@ ASN1_TIME_compare(const ASN1_TIME *t1, const ASN1_TIME *t2)
 	if (t2->type != V_ASN1_UTCTIME && t2->type != V_ASN1_GENERALIZEDTIME)
 		return -2;
 
-	if (ASN1_time_parse(t1->data, t1->length, &tm1, t1->type) == -1)
+	if (ASN1_time_parse((const char *)t1->data, t1->length, &tm1, t1->type) == -1)
 		return -2;
 
-	if (ASN1_time_parse(t2->data, t2->length, &tm2, t2->type) == -1)
+	if (ASN1_time_parse((const char *)t2->data, t2->length, &tm2, t2->type) == -1)
 		return -2;
 
 	return ASN1_time_tm_cmp(&tm1, &tm2);
@@ -511,7 +511,7 @@ ASN1_UTCTIME_check(const ASN1_UTCTIME *d)
 {
 	if (d->type != V_ASN1_UTCTIME)
 		return 0;
-	return d->type == ASN1_time_parse(d->data, d->length, NULL, d->type);
+	return d->type == ASN1_time_parse((const char *)d->data, d->length, NULL, d->type);
 }
 LCRYPTO_ALIAS(ASN1_UTCTIME_check);
 
@@ -557,7 +557,7 @@ ASN1_GENERALIZEDTIME_check(const ASN1_GENERALIZEDTIME *d)
 {
 	if (d->type != V_ASN1_GENERALIZEDTIME)
 		return 0;
-	return d->type == ASN1_time_parse(d->data, d->length, NULL, d->type);
+	return d->type == ASN1_time_parse((const char *)d->data, d->length, NULL, d->type);
 }
 LCRYPTO_ALIAS(ASN1_GENERALIZEDTIME_check);
 

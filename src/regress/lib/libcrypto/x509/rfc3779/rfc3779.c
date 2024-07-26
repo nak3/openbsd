@@ -64,8 +64,8 @@ struct IPAddressOrRange_test {
 	const uint8_t	 der[32];
 	size_t		 der_len;
 	unsigned	 afi;
-	const uint8_t	 min[RAW_ADDRESS_SIZE];
-	const uint8_t	 max[RAW_ADDRESS_SIZE];
+        const unsigned char      min[RAW_ADDRESS_SIZE];
+        const unsigned char      max[RAW_ADDRESS_SIZE];
 };
 
 const struct IPAddressOrRange_test IPAddressOrRange_test_data[] = {
