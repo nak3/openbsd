@@ -78,7 +78,7 @@ static unsigned char sslv2_client_hello_tls12[] = {
 };
 
 struct server_hello_test {
-	const unsigned char *desc;
+	const unsigned char desc[30];
 	unsigned char *client_hello;
 	const size_t client_hello_len;
 	const SSL_METHOD *(*ssl_method)(void);
