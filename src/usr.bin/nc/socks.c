@@ -180,8 +180,8 @@ socks_connect(const char *host, const char *port,
     int socksv, const char *proxyuser)
 {
 	int proxyfd, r, authretry = 0;
-        size_t hlen, wlen = 0;
-        unsigned char buf[1024];
+	size_t hlen, wlen;
+	unsigned char buf[1024];
 	size_t cnt;
 	struct sockaddr_storage addr;
 	struct sockaddr_in *in4 = (struct sockaddr_in *)&addr;
@@ -223,7 +223,7 @@ socks_connect(const char *host, const char *port,
 		if (cnt != 2)
 			err(1, "read failed (%zu/3)", cnt);
 
-		if ((unsigned char)buf[1] == SOCKS_NOMETHOD)
+		if (buf[1] == SOCKS_NOMETHOD)
 			errx(1, "authentication method negotiation failed");
 
 		switch (addr.ss_family) {
@@ -352,7 +352,7 @@ socks_connect(const char *host, const char *port,
 			    proxyuser, proxypass);
 			explicit_bzero(proxypass, sizeof proxypass);
 			if (r == -1 || (size_t)r >= sizeof(buf) ||
-			    b64_ntop((const unsigned char *)buf, strlen(buf), resp,
+			    b64_ntop(buf, strlen(buf), resp,
 			    sizeof(resp)) == -1)
 				errx(1, "Proxy username/password too long");
 			r = snprintf(buf, sizeof(buf), "Proxy-Authorization: "

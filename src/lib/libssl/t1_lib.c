@@ -1082,7 +1082,7 @@ tls_decrypt_ticket(SSL *s, CBS *ticket, int *alert, SSL_SESSION **psess)
 	if (HMAC_Update(hctx, CBS_data(&ticket_encdata),
 	    CBS_len(&ticket_encdata)) <= 0)
 		goto err;
-	if (HMAC_Final(hctx, hmac, (unsigned int*)&hlen) <= 0)
+	if (HMAC_Final(hctx, hmac, &hlen) <= 0)
 		goto err;
 
 	if (!CBS_mem_equal(&ticket_hmac, hmac, hlen))
