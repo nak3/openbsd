@@ -222,8 +222,8 @@ test_x509_setters(void)
 	x509_set_integer("X509_set_serialNumber", X509_set_serialNumber, &x, 1);
 	x509_set_time("X509_set_notBefore", X509_set_notBefore, &x, 0);
 	x509_set_time("X509_set_notAfter", X509_set_notAfter, &x, 60);
-	x509_set_name("X509_set_issuer_name", X509_set_issuer_name, &x, "NL");
-	x509_set_name("X509_set_subject_name", X509_set_subject_name, &x, "BE");
+	x509_set_name("X509_set_issuer_name", X509_set_issuer_name, &x, (const unsigned char *)"NL");
+	x509_set_name("X509_set_subject_name", X509_set_subject_name, &x, (const unsigned char *)"BE");
 
 	/* one time creation of the original DER */
 	if (!X509_sign(x, pkey, EVP_sha256()))
@@ -246,13 +246,13 @@ test_x509_setters(void)
 
 	/* test X509_set_issuer_name */
 	x509_setup(&der, &der2, &a, dersz, &der2sz);
-	x509_set_name("X509_set_issuer_name", X509_set_issuer_name, &a, "DE");
+	x509_set_name("X509_set_issuer_name", X509_set_issuer_name, &a, (const unsigned char *)"DE");
 	failed |= x509_compare("X509_set_issuer_name", a, der2, der2sz);
 	x509_cleanup(&a, &der2);
 
 	/* test X509_set_subject_name */
 	x509_setup(&der, &der2, &a, dersz, &der2sz);
-	x509_set_name("X509_set_subject_name", X509_set_subject_name, &a, "FR");
+	x509_set_name("X509_set_subject_name", X509_set_subject_name, &a, (const unsigned char *)"FR");
 	failed |= x509_compare("X509_set_subject_name", a, der2, der2sz);
 	x509_cleanup(&a, &der2);
 
@@ -312,7 +312,7 @@ test_x509_crl_setters(void)
 	x509_crl_set_time("X509_CRL_set_nextUpdate", X509_CRL_set_nextUpdate,
 	    &xc, 60);
 	x509_crl_set_name("X509_CRL_set_issuer_name", X509_CRL_set_issuer_name,
-	    &xc, "NL");
+	    &xc, (const unsigned char *)"NL");
 
 	/* one time creation of the original DER */
 	if (!X509_CRL_sign(xc, pkey, EVP_sha256()))
@@ -330,7 +330,7 @@ test_x509_crl_setters(void)
 	/* test X509_CRL_set_issuer_name */
 	x509_crl_setup(&der, &der2, &ac, dersz, &der2sz);
 	x509_crl_set_name("X509_CRL_set_issuer_name", X509_CRL_set_issuer_name,
-	    &ac, "DE");
+	    &ac, (const unsigned char *)"DE");
 	failed |= x509_crl_compare("X509_CRL_set_issuer_name", ac, der2,
 	    der2sz);
 	x509_crl_cleanup(&ac, &der2);
@@ -426,7 +426,7 @@ test_x509_req_setters(void)
 
 	if ((xn = X509_NAME_new()) == NULL)
 		err(1, NULL);
-	if (!X509_NAME_add_entry_by_txt(xn, "C", MBSTRING_ASC, "NL", -1, -1, 0))
+	if (!X509_NAME_add_entry_by_txt(xn, "C", MBSTRING_ASC, (const unsigned char *)"NL", -1, -1, 0))
 		errx(1, "X509_NAME_add_entry_by_txt");
 	if (!X509_REQ_set_subject_name(xr, xn))
 		errx(1, "X509_REQ_set_subject_name");
@@ -534,7 +534,7 @@ test_x509_name_get(void)
 		    OBJ_nid2obj(NID_commonName)))
 			err(1, "X509_NAME_ENTRY_set_object");
 		if (!X509_NAME_ENTRY_set_data(entry, test->encode_type,
-		    test->data, test->len))
+		    (const unsigned char *)test->data, test->len))
 			err(1, "X509_NAME_ENTRY_set_data");
 		if (!X509_NAME_add_entry(name, entry, -1, 0))
 			err(1, "X509_NAME_add_entry");
