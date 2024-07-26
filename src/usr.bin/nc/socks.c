@@ -181,7 +181,7 @@ socks_connect(const char *host, const char *port,
 {
 	int proxyfd, r, authretry = 0;
         size_t hlen, wlen = 0;
-        char buf[1024];
+        unsigned char buf[1024];
 	size_t cnt;
 	struct sockaddr_storage addr;
 	struct sockaddr_in *in4 = (struct sockaddr_in *)&addr;

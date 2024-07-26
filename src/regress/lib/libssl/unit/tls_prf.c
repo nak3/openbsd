@@ -27,7 +27,7 @@ int tls1_PRF(SSL *s, const unsigned char *secret, size_t secret_len,
 #define TLS_PRF_OUT_LEN 128
 
 struct tls_prf_test {
-	const unsigned char *desc;
+	const char *desc;
 	const SSL_METHOD *(*ssl_method)(void);
 	const uint16_t cipher_value;
 	const unsigned char out[TLS_PRF_OUT_LEN];
@@ -133,7 +133,7 @@ do_tls_prf_test(int test_no, const struct tls_prf_test *tpt)
 	for (len = 1; len <= TLS_PRF_OUT_LEN; len++) {
 		memset(out, 'A', TLS_PRF_OUT_LEN);
 
-		if (tls1_PRF(ssl, TLS_PRF_SECRET, sizeof(TLS_PRF_SECRET),
+		if (tls1_PRF(ssl, (char *)TLS_PRF_SECRET, sizeof(TLS_PRF_SECRET),
 		    TLS_PRF_SEED1, sizeof(TLS_PRF_SEED1), TLS_PRF_SEED2,
 		    sizeof(TLS_PRF_SEED2), TLS_PRF_SEED3, sizeof(TLS_PRF_SEED3),
 		    TLS_PRF_SEED4, sizeof(TLS_PRF_SEED4), TLS_PRF_SEED5,
