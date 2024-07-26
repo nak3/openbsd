@@ -43,17 +43,17 @@ main(void)
 	if ((name = X509_NAME_new()) == NULL)
 		err(1, NULL);
 	X509_NAME_add_entry_by_txt(name, "ST", MBSTRING_ASC,
-	    "BaWue", -1, -1, 0);
+	    (const unsigned char *)"BaWue", -1, -1, 0);
 	X509_NAME_add_entry_by_txt(name, "O", MBSTRING_ASC,
-	    "KIT", -1, -1, 0);
+	    (const unsigned char *)"KIT", -1, -1, 0);
 	debug_print(name);
 
 	X509_NAME_add_entry_by_txt(name, "L", MBSTRING_ASC,
-	    "Karlsruhe", -1, 1, 0);
+	    (const unsigned char *)"Karlsruhe", -1, 1, 0);
 	debug_print(name);
 
 	X509_NAME_add_entry_by_txt(name, "C", MBSTRING_ASC,
-	    "DE", -1, 0, 1);
+	    (const unsigned char *)"DE", -1, 0, 1);
 	debug_print(name);
 
 	X509_NAME_free(name);
