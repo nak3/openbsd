@@ -910,7 +910,7 @@ build_addr_block_test(const struct build_addr_block_test_data *test)
 		memcmp_failed = memcmp(out, test->der, test->der_len);
 	if (memcmp_failed) {
 		report_hexdump(__func__, test->description, "memcmp DER failed",
-		    test->der, test->der_len, out, out_len);
+		    (const unsigned char *)test->der, test->der_len, out, out_len);
 		goto err;
 	}
 
@@ -944,7 +944,7 @@ build_addr_block_test(const struct build_addr_block_test_data *test)
 		goto err;
 	}
 
-	p = test->der;
+	p = (const unsigned char *)test->der;
 	if ((parsed = d2i_IPAddrBlocks(NULL, &p, test->der_len)) == NULL) {
 		fprintf(stderr, "%s: \"%s\" d2i_IPAddrBlocks failed\n",
 		    __func__, test->description);
