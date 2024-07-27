@@ -107,6 +107,7 @@ LSSL_USED(SSL_CTX_get_cert_store);
 LSSL_USED(SSL_CTX_set_cert_store);
 LSSL_USED(SSL_CTX_get0_certificate);
 LSSL_USED(SSL_CTX_get0_privatekey);
+LSSL_USED(SSL_CTX_set1_cert_store);
 LSSL_USED(SSL_want);
 LSSL_USED(SSL_clear);
 LSSL_USED(SSL_CTX_flush_sessions);

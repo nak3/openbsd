@@ -1109,6 +1109,7 @@ X509_STORE *SSL_CTX_get_cert_store(const SSL_CTX *);
 void SSL_CTX_set_cert_store(SSL_CTX *, X509_STORE *);
 X509 *SSL_CTX_get0_certificate(const SSL_CTX *ctx);
 EVP_PKEY *SSL_CTX_get0_privatekey(const SSL_CTX *ctx);
+void SSL_CTX_set1_cert_store(SSL_CTX *ctx, X509_STORE *store);
 int SSL_want(const SSL *s);
 int	SSL_clear(SSL *s);
 

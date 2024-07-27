@@ -80,6 +80,7 @@ SSL_CTX_sess_set_get_cb
 SSL_CTX_sess_set_new_cb
 SSL_CTX_sess_set_remove_cb
 SSL_CTX_sessions
+SSL_CTX_set1_cert_store
 SSL_CTX_set0_chain
 SSL_CTX_set1_chain
 SSL_CTX_set1_groups

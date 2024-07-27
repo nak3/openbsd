@@ -3423,6 +3423,15 @@ SSL_CTX_get0_privatekey(const SSL_CTX *ctx)
 }
 LSSL_ALIAS(SSL_CTX_get0_privatekey);
 
+void
+SSL_CTX_set1_cert_store(SSL_CTX *ctx, X509_STORE *store)
+{
+    if (store != NULL)
+        X509_STORE_up_ref(store);
+    SSL_CTX_set_cert_store(ctx, store);
+}
+LSSL_ALIAS(SSL_CTX_set1_cert_store);
+
 int
 SSL_want(const SSL *s)
 {
