@@ -1875,7 +1875,7 @@ addr_validate_path_internal(X509_STORE_CTX *ctx, STACK_OF(X509) *chain,
 	X509 *cert = NULL;
 	int depth = -1;
 	int i;
-	unsigned int length;
+	int length;
 	int ret = 1;
 
 	/* We need a non-empty chain to test against. */

@@ -734,7 +734,7 @@ tls13_server_certificate_verify_send(struct tls13_ctx *ctx, CBB *cbb)
 	    sizeof(tls13_cert_verify_pad)))
 		goto err;
 	if (!CBB_add_bytes(&sig_cbb, tls13_cert_server_verify_context,
-	    strlen(tls13_cert_server_verify_context)))
+	    strlen((const char *)tls13_cert_server_verify_context)))
 		goto err;
 	if (!CBB_add_u8(&sig_cbb, 0))
 		goto err;
@@ -789,7 +789,7 @@ int
 tls13_server_finished_send(struct tls13_ctx *ctx, CBB *cbb)
 {
 	struct tls13_secrets *secrets = ctx->hs->tls13.secrets;
-	struct tls13_secret context = { .data = "", .len = 0 };
+	struct tls13_secret context = { .data = (unsigned char *)"", .len = 0 };
 	struct tls13_secret finished_key = { .data = NULL, .len = 0 } ;
 	uint8_t transcript_hash[EVP_MAX_MD_SIZE];
 	size_t transcript_hash_len;
@@ -846,7 +846,7 @@ int
 tls13_server_finished_sent(struct tls13_ctx *ctx)
 {
 	struct tls13_secrets *secrets = ctx->hs->tls13.secrets;
-	struct tls13_secret context = { .data = "", .len = 0 };
+	struct tls13_secret context = { .data = (unsigned char *)"", .len = 0 };
 
 	/*
 	 * Derive application traffic keys.
@@ -965,7 +965,7 @@ tls13_client_certificate_verify_recv(struct tls13_ctx *ctx, CBS *cbs)
 	    sizeof(tls13_cert_verify_pad)))
 		goto err;
 	if (!CBB_add_bytes(&cbb, tls13_cert_client_verify_context,
-	    strlen(tls13_cert_client_verify_context)))
+	    strlen((const char *)tls13_cert_client_verify_context)))
 		goto err;
 	if (!CBB_add_u8(&cbb, 0))
 		goto err;
@@ -1026,7 +1026,7 @@ int
 tls13_client_finished_recv(struct tls13_ctx *ctx, CBS *cbs)
 {
 	struct tls13_secrets *secrets = ctx->hs->tls13.secrets;
-	struct tls13_secret context = { .data = "", .len = 0 };
+	struct tls13_secret context = { .data = (unsigned char *)"", .len = 0 };
 	struct tls13_secret finished_key;
 	uint8_t *verify_data = NULL;
 	size_t verify_data_len;
