@@ -115,13 +115,13 @@ do_keypair_tests(void)
 		goto done;
 	}
 
-	if (compare_mem("certificate", cert, cert_len, kp->cert_mem,
+	if (compare_mem("certificate", cert, cert_len, (unsigned char *)kp->cert_mem,
 	    kp->cert_len) == -1)
 		goto done;
-	if (compare_mem("key", key, key_len, kp->key_mem, kp->cert_len) == -1)
+	if (compare_mem("key", key, key_len, (unsigned char *)kp->key_mem, kp->cert_len) == -1)
 		goto done;
 	if (compare_mem("ocsp staple", ocsp_staple, ocsp_staple_len,
-	    kp->ocsp_staple, kp->ocsp_staple_len) == -1)
+	    (unsigned char *)kp->ocsp_staple, kp->ocsp_staple_len) == -1)
 		goto done;
 	if (strcmp(kp->pubkey_hash, PUBKEY_HASH) != 0) {
 		fprintf(stderr, "FAIL: got pubkey hash '%s', want '%s'",
@@ -150,13 +150,13 @@ do_keypair_tests(void)
 		fprintf(stderr, "FAIL: failed to load ocsp staple: %s\n", err.msg);
 		goto done;
 	}
-	if (compare_mem("certificate", cert, cert_len, kp->cert_mem,
+	if (compare_mem("certificate", cert, cert_len, (unsigned char *)kp->cert_mem,
 	    kp->cert_len) == -1)
 		goto done;
-	if (compare_mem("key", key, key_len, kp->key_mem, kp->cert_len) == -1)
+	if (compare_mem("key", key, key_len, (unsigned char *)kp->key_mem, kp->cert_len) == -1)
 		goto done;
 	if (compare_mem("ocsp staple", ocsp_staple, ocsp_staple_len,
-	    kp->ocsp_staple, kp->ocsp_staple_len) == -1)
+	    (unsigned char *)kp->ocsp_staple, kp->ocsp_staple_len) == -1)
 		goto done;
 	if (strcmp(kp->pubkey_hash, PUBKEY_HASH) != 0) {
 		fprintf(stderr, "FAIL: got pubkey hash '%s', want '%s'",
