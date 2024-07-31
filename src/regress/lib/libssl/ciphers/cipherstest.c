@@ -22,6 +22,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "ssl_local.h"
+
 int ssl3_num_ciphers(void);
 const SSL_CIPHER *ssl3_get_cipher_by_index(int idx);
 
@@ -986,14 +988,25 @@ struct cipher_set_test {
 	const char *ssl_ciphersuites;
 	const char *ssl_rulestr;
 	int cids_aes_accel_fixup;
-	unsigned long cids[32];
+	unsigned long ssl_cids[32];
+	unsigned long ctx_cids[50];
+	int default_ciphersuites;
 };
 
 struct cipher_set_test cipher_set_tests[] = {
 	{
 		.ctx_rulestr = "TLSv1.2+ECDHE+AEAD+AES",
 		.cids_aes_accel_fixup = 1,
-		.cids = {
+		.ssl_cids = {
+			TLS1_3_CK_AES_256_GCM_SHA384,
+			TLS1_3_CK_CHACHA20_POLY1305_SHA256,
+			TLS1_3_CK_AES_128_GCM_SHA256,
+			TLS1_CK_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+			TLS1_CK_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+			TLS1_CK_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+			TLS1_CK_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+		},
+		.ctx_cids = {
 			TLS1_3_CK_AES_256_GCM_SHA384,
 			TLS1_3_CK_CHACHA20_POLY1305_SHA256,
 			TLS1_3_CK_AES_128_GCM_SHA256,
@@ -1006,7 +1019,7 @@ struct cipher_set_test cipher_set_tests[] = {
 	{
 		.ssl_rulestr = "TLSv1.2+ECDHE+AEAD+AES",
 		.cids_aes_accel_fixup = 1,
-		.cids = {
+		.ssl_cids = {
 			TLS1_3_CK_AES_256_GCM_SHA384,
 			TLS1_3_CK_CHACHA20_POLY1305_SHA256,
 			TLS1_3_CK_AES_128_GCM_SHA256,
@@ -1015,12 +1028,21 @@ struct cipher_set_test cipher_set_tests[] = {
 			TLS1_CK_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
 			TLS1_CK_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
 		},
+		.default_ciphersuites = 1,
 	},
 	{
 		.ctx_ciphersuites_first = 1,
 		.ctx_ciphersuites = "AEAD-AES256-GCM-SHA384:AEAD-CHACHA20-POLY1305-SHA256",
 		.ctx_rulestr = "TLSv1.2+ECDHE+AEAD+AES",
-		.cids = {
+		.ssl_cids = {
+			TLS1_3_CK_AES_256_GCM_SHA384,
+			TLS1_3_CK_CHACHA20_POLY1305_SHA256,
+			TLS1_CK_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+			TLS1_CK_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+			TLS1_CK_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+			TLS1_CK_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+		},
+		.ctx_cids = {
 			TLS1_3_CK_AES_256_GCM_SHA384,
 			TLS1_3_CK_CHACHA20_POLY1305_SHA256,
 			TLS1_CK_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
@@ -1033,7 +1055,7 @@ struct cipher_set_test cipher_set_tests[] = {
 		.ssl_ciphersuites_first = 1,
 		.ssl_ciphersuites = "AEAD-AES256-GCM-SHA384:AEAD-CHACHA20-POLY1305-SHA256",
 		.ssl_rulestr = "TLSv1.2+ECDHE+AEAD+AES",
-		.cids = {
+		.ssl_cids = {
 			TLS1_3_CK_AES_256_GCM_SHA384,
 			TLS1_3_CK_CHACHA20_POLY1305_SHA256,
 			TLS1_CK_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
@@ -1041,12 +1063,21 @@ struct cipher_set_test cipher_set_tests[] = {
 			TLS1_CK_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
 			TLS1_CK_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
 		},
+		.default_ciphersuites = 1,
 	},
 	{
 		.ctx_ciphersuites_first = 0,
 		.ctx_ciphersuites = "AEAD-AES256-GCM-SHA384:AEAD-CHACHA20-POLY1305-SHA256",
 		.ctx_rulestr = "TLSv1.2+ECDHE+AEAD+AES",
-		.cids = {
+		.ssl_cids = {
+			TLS1_3_CK_AES_256_GCM_SHA384,
+			TLS1_3_CK_CHACHA20_POLY1305_SHA256,
+			TLS1_CK_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+			TLS1_CK_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+			TLS1_CK_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+			TLS1_CK_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+		},
+		.ctx_cids = {
 			TLS1_3_CK_AES_256_GCM_SHA384,
 			TLS1_3_CK_CHACHA20_POLY1305_SHA256,
 			TLS1_CK_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
@@ -1059,7 +1090,7 @@ struct cipher_set_test cipher_set_tests[] = {
 		.ssl_ciphersuites_first = 0,
 		.ssl_ciphersuites = "AEAD-AES256-GCM-SHA384:AEAD-CHACHA20-POLY1305-SHA256",
 		.ssl_rulestr = "TLSv1.2+ECDHE+AEAD+AES",
-		.cids = {
+		.ssl_cids = {
 			TLS1_3_CK_AES_256_GCM_SHA384,
 			TLS1_3_CK_CHACHA20_POLY1305_SHA256,
 			TLS1_CK_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
@@ -1067,33 +1098,36 @@ struct cipher_set_test cipher_set_tests[] = {
 			TLS1_CK_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
 			TLS1_CK_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
 		},
+		.default_ciphersuites = 1,
 	},
 	{
 		.ssl_ciphersuites_first = 1,
 		.ssl_ciphersuites = "",
 		.ssl_rulestr = "TLSv1.2+ECDHE+AEAD+AES",
-		.cids = {
+		.ssl_cids = {
 			TLS1_CK_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
 			TLS1_CK_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
 			TLS1_CK_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
 			TLS1_CK_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
 		},
+		.default_ciphersuites = 1,
 	},
 	{
 		.ssl_ciphersuites_first = 0,
 		.ssl_ciphersuites = "",
 		.ssl_rulestr = "TLSv1.2+ECDHE+AEAD+AES",
-		.cids = {
+		.ssl_cids = {
 			TLS1_CK_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
 			TLS1_CK_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
 			TLS1_CK_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
 			TLS1_CK_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
 		},
+		.default_ciphersuites = 1,
 	},
 	{
 		.ctx_ciphersuites = "AEAD-AES256-GCM-SHA384:AEAD-CHACHA20-POLY1305-SHA256",
 		.ssl_rulestr = "TLSv1.2+ECDHE+AEAD+AES",
-		.cids = {
+		.ssl_cids = {
 			TLS1_3_CK_AES_256_GCM_SHA384,
 			TLS1_3_CK_CHACHA20_POLY1305_SHA256,
 			TLS1_CK_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
@@ -1101,13 +1135,27 @@ struct cipher_set_test cipher_set_tests[] = {
 			TLS1_CK_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
 			TLS1_CK_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
 		},
+		.ctx_cids = {
+			TLS1_3_CK_AES_256_GCM_SHA384,
+			TLS1_3_CK_CHACHA20_POLY1305_SHA256,
+		},
+		.default_ciphersuites = 1,
 	},
 	{
 		.ctx_rulestr = "TLSv1.2+ECDHE+AEAD+AES",
 		.ssl_ciphersuites = "AEAD-AES256-GCM-SHA384:AEAD-CHACHA20-POLY1305-SHA256",
-		.cids = {
+		.ssl_cids = {
 			TLS1_3_CK_AES_256_GCM_SHA384,
 			TLS1_3_CK_CHACHA20_POLY1305_SHA256,
+			TLS1_CK_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+			TLS1_CK_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+			TLS1_CK_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+			TLS1_CK_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+		},
+		.ctx_cids = {
+			TLS1_3_CK_CHACHA20_POLY1305_SHA256,
+			TLS1_3_CK_AES_256_GCM_SHA384,
+			TLS1_3_CK_AES_128_GCM_SHA256,
 			TLS1_CK_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
 			TLS1_CK_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
 			TLS1_CK_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
@@ -1124,19 +1172,53 @@ cipher_set_test(void)
 {
 	struct cipher_set_test *cst;
 	STACK_OF(SSL_CIPHER) *ciphers = NULL;
+	STACK_OF(SSL_CIPHER) *default_ciphers = NULL;
 	SSL_CIPHER *cipher;
 	SSL_CTX *ctx = NULL;
+	SSL_CTX *dummy = NULL;
 	SSL *ssl = NULL;
 	int failed = 0;
-	size_t i;
-	int j;
+	size_t i, j, k;
+	int default_cipher_num;
+	unsigned long default_cids[50];
+
+	if ((dummy = SSL_CTX_new(TLS_method())) == NULL)
+		errx(1, "SSL_CTX_new");
+	if (!SSL_CTX_set_cipher_list(dummy, "DEFAULT"))
+		errx(1, "SSL_CTX_set_cipher_list");
+
+	default_ciphers = SSL_CTX_get_ciphers(dummy);
+	default_cipher_num = sk_SSL_CIPHER_num(default_ciphers);
+
+	for (j = 0; j < default_cipher_num; j++) {
+		cipher = sk_SSL_CIPHER_value(default_ciphers, j);
+		default_cids[j] = SSL_CIPHER_get_id(cipher);
+	}
 
 	for (i = 0; i < N_CIPHER_SET_TESTS; i++) {
 		cst = &cipher_set_tests[i];
 
+		if (cst->default_ciphersuites && cst->ctx_cids[0] == 0) {
+			memcpy(cst->ctx_cids, default_cids, sizeof(unsigned long) * default_cipher_num);
+		} else if (cst->default_ciphersuites) {
+			// SSL_CTX_set_ciphersuites removes unspecified SSL_TLSV1_3 cipher from the default cipher list.
+			// (i.e.) SSL_CTX_get_ciphers = specified TLSv1.3 ciphers + (default_cipher - unspecified TLSv1.3 ciphers).
+			k = 0;
+			while (cst->ctx_cids[k] != 0)
+				k++;
+			for (j = 0; j < default_cipher_num; j++) {
+				cipher = sk_SSL_CIPHER_value(default_ciphers, j);
+				if (cipher->algorithm_ssl == SSL_TLSV1_3)
+					continue;
+				cst->ctx_cids[k++] = SSL_CIPHER_get_id(cipher);
+			}
+		}
+
 		if (!ssl_aes_is_accelerated() && cst->cids_aes_accel_fixup) {
-			cst->cids[0] = TLS1_3_CK_CHACHA20_POLY1305_SHA256;
-			cst->cids[1] = TLS1_3_CK_AES_256_GCM_SHA384;
+			cst->ssl_cids[0] = TLS1_3_CK_CHACHA20_POLY1305_SHA256;
+			cst->ssl_cids[1] = TLS1_3_CK_AES_256_GCM_SHA384;
+			cst->ctx_cids[0] = TLS1_3_CK_CHACHA20_POLY1305_SHA256;
+			cst->ctx_cids[1] = TLS1_3_CK_AES_256_GCM_SHA384;
 		}
 
 		if ((ctx = SSL_CTX_new(TLS_method())) == NULL)
@@ -1155,7 +1237,22 @@ cipher_set_test(void)
 				errx(1, "SSL_CTX_set_ciphersuites");
 		}
 
-		/* XXX - check SSL_CTX_get_ciphers(ctx) */
+		ciphers = SSL_CTX_get_ciphers(ctx);
+
+		for (j = 0; j < sk_SSL_CIPHER_num(ciphers); j++) {
+			cipher = sk_SSL_CIPHER_value(ciphers, j);
+			if (SSL_CIPHER_get_id(cipher) == cst->ctx_cids[j])
+				continue;
+			fprintf(stderr, "FAIL: SSL_CTX_get_ciphers %zu - got cipher %zu with "
+			    "id %lx, want %lx\n", i, j,
+			    SSL_CIPHER_get_id(cipher), cst->ctx_cids[j]);
+			failed |= 1;
+		}
+		if (cst->ctx_cids[j] != 0) {
+			fprintf(stderr, "FAIL: SSL_CTX_get_ciphers %zu - got %d ciphers, "
+			    "expected more", i, sk_SSL_CIPHER_num(ciphers));
+			failed |= 1;
+		}
 
 		if ((ssl = SSL_new(ctx)) == NULL)
 			errx(1, "SSL_new");
@@ -1177,15 +1274,15 @@ cipher_set_test(void)
 
 		for (j = 0; j < sk_SSL_CIPHER_num(ciphers); j++) {
 			cipher = sk_SSL_CIPHER_value(ciphers, j);
-			if (SSL_CIPHER_get_id(cipher) == cst->cids[j])
+			if (SSL_CIPHER_get_id(cipher) == cst->ssl_cids[j])
 				continue;
-			fprintf(stderr, "FAIL: test %zu - got cipher %d with "
+			fprintf(stderr, "FAIL: SSL_get_ciphers %zu - got cipher %zu with "
 			    "id %lx, want %lx\n", i, j,
-			    SSL_CIPHER_get_id(cipher), cst->cids[j]);
+			    SSL_CIPHER_get_id(cipher), cst->ssl_cids[j]);
 			failed |= 1;
 		}
-		if (cst->cids[j] != 0) {
-			fprintf(stderr, "FAIL: test %zu - got %d ciphers, "
+		if (cst->ssl_cids[j] != 0) {
+			fprintf(stderr, "FAIL: SSL_get_ciphers %zu - got %d ciphers, "
 			    "expected more", i, sk_SSL_CIPHER_num(ciphers));
 			failed |= 1;
 		}
