@@ -325,7 +325,7 @@ x509_constraints_parse_mailbox(CBS *candidate,
 {
 	char working[DOMAIN_PART_MAX_LEN + 1] = { 0 };
 	char *candidate_local = NULL;
-	char *candidate_domain = NULL;
+	const unsigned char *candidate_domain = NULL;
 	CBS domain_cbs;
 	size_t i, len, wi = 0;
 	int accept = 0;
@@ -377,7 +377,7 @@ x509_constraints_parse_mailbox(CBS *candidate,
 					goto bad;
 				if (candidate_domain != NULL)
 					goto bad;
-				candidate_domain = strdup(working);
+				candidate_domain = (const unsigned char *)strdup(working);
 				if (candidate_domain == NULL)
 					goto bad;
 			}
@@ -445,22 +445,22 @@ x509_constraints_parse_mailbox(CBS *candidate,
 	}
 	if (candidate_local == NULL || candidate_domain == NULL)
 		goto bad;
-	CBS_init(&domain_cbs, candidate_domain, strlen(candidate_domain));
+	CBS_init(&domain_cbs, candidate_domain, strlen((const char *)candidate_domain));
 	if (!x509_constraints_valid_host(&domain_cbs, 0))
 		goto bad;
 
 	if (name != NULL) {
 		name->local = candidate_local;
-		name->name = candidate_domain;
+		name->name = (char *)candidate_domain;
 		name->type = GEN_EMAIL;
 	} else {
 		free(candidate_local);
-		free(candidate_domain);
+		free((void *)candidate_domain);
 	}
 	return 1;
  bad:
 	free(candidate_local);
-	free(candidate_domain);
+	free((void *)candidate_domain);
 	return 0;
 }
 
@@ -510,7 +510,7 @@ x509_constraints_uri_host(uint8_t *uri, size_t len, char **hostpart)
 {
 	size_t i, hostlen = 0;
 	uint8_t *authority = NULL;
-	char *host = NULL;
+	unsigned char *host = NULL;
 	CBS host_cbs;
 
 	/*
@@ -648,7 +648,7 @@ x509_constraints_uri(uint8_t *uri, size_t ulen, uint8_t *constraint,
 		*error = X509_V_ERR_UNSUPPORTED_CONSTRAINT_SYNTAX;
 		goto err;
 	}
-	ret = x509_constraints_domain(hostpart, strlen(hostpart), constraint,
+	ret = x509_constraints_domain(hostpart, strlen(hostpart), (char *)constraint,
 	    len);
  err:
 	free(hostpart);
@@ -999,7 +999,7 @@ x509_constraints_validate(GENERAL_NAME *constraint,
 	case GEN_DNS:
 		if (!x509_constraints_valid_domain_constraint(&cbs))
 			goto err;
-		if ((name->name = strndup(bytes, len)) == NULL) {
+		if ((name->name = strndup((const char *)bytes, len)) == NULL) {
 			error = X509_V_ERR_OUT_OF_MEM;
 			goto err;
 		}
@@ -1045,7 +1045,7 @@ x509_constraints_validate(GENERAL_NAME *constraint,
 	case GEN_URI:
 		if (!x509_constraints_valid_domain_constraint(&cbs))
 			goto err;
-		if ((name->name = strndup(bytes, len)) == NULL) {
+		if ((name->name = strndup((const char *)bytes, len)) == NULL) {
 			error = X509_V_ERR_OUT_OF_MEM;
 			goto err;
 		}
