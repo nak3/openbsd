@@ -91,7 +91,7 @@ struct parse_protocols_test parse_protocols_tests[] = {
 	{
 		.protostr = "tlsv1.1,tlsv1.2,!tlsv1.1",
 		.want_return = 0,
-		.want_protocols = 0,
+		.want_protocols = TLS_PROTOCOL_TLSv1_2,
 	},
 	{
 		.protostr = "unknown",
@@ -111,17 +111,17 @@ struct parse_protocols_test parse_protocols_tests[] = {
 	{
 		.protostr = "all,!tlsv1.0",
 		.want_return = 0,
-		.want_protocols = TLS_PROTOCOL_TLSv1_3,
+		.want_protocols = TLS_PROTOCOL_TLSv1_2 | TLS_PROTOCOL_TLSv1_3,
 	},
 	{
 		.protostr = "!tlsv1.0",
 		.want_return = 0,
-		.want_protocols = TLS_PROTOCOL_TLSv1_3,
+		.want_protocols = TLS_PROTOCOL_TLSv1_2 | TLS_PROTOCOL_TLSv1_3,
 	},
 	{
 		.protostr = "!tlsv1.0,!tlsv1.1,!tlsv1.3",
 		.want_return = 0,
-		.want_protocols = 0,
+		.want_protocols = TLS_PROTOCOL_TLSv1_2,
 	},
 	{
 		.protostr = "!tlsv1.0,!tlsv1.1,tlsv1.2,!tlsv1.3",

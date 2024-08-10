@@ -260,11 +260,13 @@ tls_config_parse_protocols(uint32_t *protocols, const char *protostr)
 			proto = TLS_PROTOCOLS_DEFAULT;
 		if (strcasecmp(p, "tlsv1") == 0)
 			proto = TLS_PROTOCOL_TLSv1;
-		else if (strcasecmp(p, "tlsv1.0") == 0)
+		else if (strcasecmp(p, "tlsv1.0") == 0) {
 			proto = TLS_PROTOCOL_TLSv1_2;
-		else if (strcasecmp(p, "tlsv1.1") == 0)
+			negate = 0; // !tlsv1.0 should not flip v1.2.
+		} else if (strcasecmp(p, "tlsv1.1") == 0) {
 			proto = TLS_PROTOCOL_TLSv1_2;
-		else if (strcasecmp(p, "tlsv1.2") == 0)
+			negate = 0; // !tlsv1.1 should not flip v1.2.
+		} else if (strcasecmp(p, "tlsv1.2") == 0)
 			proto = TLS_PROTOCOL_TLSv1_2;
 		else if (strcasecmp(p, "tlsv1.3") == 0)
 			proto = TLS_PROTOCOL_TLSv1_3;
