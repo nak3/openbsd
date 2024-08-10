@@ -182,7 +182,7 @@ oid_add_arc_txt(CBB *cbb, uint64_t arc, int first)
 	n = snprintf(s, sizeof(s), fmt, (unsigned long long)arc);
 	if (n < 0 || (size_t)n >= sizeof(s))
 		return 0;
-	if (!CBB_add_bytes(cbb, s, n))
+	if (!CBB_add_bytes(cbb, (const unsigned char *)s, n))
 		return 0;
 
 	return 1;
@@ -343,7 +343,7 @@ a2d_ASN1_OBJECT(unsigned char *out, int out_len, const char *in, int in_len)
 	if (in_len <= 0)
 		goto err;
 
-	CBS_init(&cbs, in, in_len);
+	CBS_init(&cbs, (const unsigned char *)in, in_len);
 
 	if (!CBB_init(&cbb, 0))
 		goto err;
@@ -401,7 +401,7 @@ i2t_ASN1_OBJECT_name(const ASN1_OBJECT *aobj, CBB *cbb, const char **out_name)
 
 	*out_name = name;
 
-	if (!CBB_add_bytes(cbb, name, strlen(name)))
+	if (!CBB_add_bytes(cbb, (const unsigned char *)name, strlen(name)))
 		return 0;
 
 	/* NUL terminate. */

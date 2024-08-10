@@ -1548,7 +1548,7 @@ _SSL_set_tlsext_host_name(SSL *s, const char *name)
 	if (name == NULL)
 		return 1;
 
-	CBS_init(&cbs, name, strlen(name));
+	CBS_init(&cbs, (const unsigned char *)name, strlen(name));
 
 	if (!tlsext_sni_is_valid_hostname(&cbs, &is_ip)) {
 		SSLerror(s, SSL_R_SSL3_EXT_INVALID_SERVERNAME);
