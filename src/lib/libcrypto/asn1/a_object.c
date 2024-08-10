@@ -448,7 +448,7 @@ i2t_ASN1_OBJECT_internal(const ASN1_OBJECT *aobj, char *buf, int buf_len, int no
 	if (!CBB_finish(&cbb, &data, &data_len))
 		goto err;
 
-	ret = strlcpy(buf, data, buf_len);
+	ret = strlcpy(buf, (const char *)data, buf_len);
  err:
 	CBB_cleanup(&cbb);
 	free(data);
@@ -474,7 +474,7 @@ t2i_ASN1_OBJECT_internal(const char *oid)
 
 	memset(&cbb, 0, sizeof(cbb));
 
-	CBS_init(&cbs, oid, strlen(oid));
+	CBS_init(&cbs, (const unsigned char *)oid, strlen(oid));
 
 	if (!CBB_init(&cbb, 0))
 		goto err;
@@ -521,7 +521,7 @@ i2a_ASN1_OBJECT(BIO *bp, const ASN1_OBJECT *aobj)
 	if (!CBB_finish(&cbb, &data, &data_len))
 		goto err;
 
-	ret = BIO_write(bp, data, strlen(data));
+	ret = BIO_write(bp, data, strlen((const char *)data));
 
  err:
 	CBB_cleanup(&cbb);
