@@ -346,7 +346,7 @@ x509_constraints_parse_mailbox(CBS *candidate,
 		return 0;
 
 	for (i = 0; i < len; i++) {
-		char c;
+		unsigned char c;
 		if (!CBS_get_u8(&copy, &c))
 			goto bad;
 		/* non ascii, cr, lf, or nul is never allowed */
