@@ -100,7 +100,7 @@ ASN1_TIME_to_tm(const ASN1_TIME *s, struct tm *tm)
 	time_t now;
 
 	if (s != NULL)
-		return ASN1_time_parse(s->data, s->length, tm, 0) != -1;
+		return ASN1_time_parse((const char *)s->data, s->length, tm, 0) != -1;
 
 	time(&now);
 	memset(tm, 0, sizeof(*tm));

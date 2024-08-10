@@ -87,7 +87,7 @@ BIO_dump_indent(BIO *bio, const char *s, int len, int indent)
 
 	if (len < 0)
 		goto err;
-	CBS_init(&cbs, s, len);
+	CBS_init(&cbs, (const unsigned char *)s, len);
 
 	if (indent < 0)
 		indent = 0;
