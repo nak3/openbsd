@@ -112,7 +112,6 @@ main(int argc, char **argv)
 				break;
 			grab_data(&private_key, buf, strlen("private_key: "));
 			state = S_START;
-			break;
 
 			MlkemKeygenFileTest(&seed, &public_key, &private_key);
 			free((void *)CBS_data(&seed));
@@ -126,5 +125,6 @@ main(int argc, char **argv)
 	}
 
 	free(buf);
+	fclose(fp);
 	exit(failure);
 }

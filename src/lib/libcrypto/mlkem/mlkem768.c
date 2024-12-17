@@ -877,6 +877,7 @@ MLKEM768_generate_key_external_entropy(
 	if (!mlkem_marshal_public_key(&cbb, &priv->pub)) {
 		abort();
 	}
+	CBB_cleanup(&cbb);
 
 	hash_h(priv->pub.public_key_hash, out_encoded_public_key,
 	    MLKEM768_PUBLIC_KEY_BYTES);
