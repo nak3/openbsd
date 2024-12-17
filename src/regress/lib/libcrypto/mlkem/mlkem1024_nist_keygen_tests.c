@@ -133,5 +133,6 @@ main(int argc, char **argv)
 	}
 
 	free(buf);
+	fclose(fp);
 	exit(failure);
 }
