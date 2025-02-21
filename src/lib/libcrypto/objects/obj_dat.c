@@ -100,7 +100,7 @@ added_obj_hash(const ADDED_OBJ *ca)
 	a = ca->obj;
 	switch (ca->type) {
 	case ADDED_DATA:
-		ret = a->length << 20L;
+		ret = (unsigned long)a->length << 20L;
 		p = (unsigned char *)a->data;
 		for (i = 0; i < a->length; i++)
 			ret ^= p[i] << ((i * 3) % 24);
@@ -118,7 +118,7 @@ added_obj_hash(const ADDED_OBJ *ca)
 		return 0;
 	}
 	ret &= 0x3fffffffL;
-	ret |= ca->type << 30L;
+	ret |= (unsigned long)ca->type << 30L;
 	return (ret);
 }
 static IMPLEMENT_LHASH_HASH_FN(added_obj, ADDED_OBJ)

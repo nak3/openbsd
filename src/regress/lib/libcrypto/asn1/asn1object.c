@@ -531,7 +531,7 @@ asn1_object_i2d_errors(void)
 
 	if ((ret = i2d_ASN1_OBJECT(aobj, NULL)) > 0) {
 		fprintf(stderr, "FAIL: i2d_ASN1_OBJECT() succeeded on undefined "
-		    "object\n");
+		    "object returned %d, want <= 0\n", ret);
 		goto failed;
 	}
 
