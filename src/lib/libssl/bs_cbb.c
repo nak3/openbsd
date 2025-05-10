@@ -85,46 +85,46 @@ CBB_cleanup(CBB *cbb)
 
 static int cbb_buffer_reserve(struct cbb_buffer_st *base, uint8_t **out,
                               size_t len) {
-  if (base == NULL) {
-    return 0;
-  }
+	if (base == NULL) {
+		return 0;
+	}
 
-  size_t newlen = base->len + len;
-  if (newlen < base->len) {
-    // Overflow
-//    OPENSSL_PUT_ERROR(CRYPTO, ERR_R_OVERFLOW);
-    goto err;
-  }
+	size_t newlen = base->len + len;
+	if (newlen < base->len) {
+		// Overflow
+		CBB_ERROR(ERR_R_OVERFLOW);
+		goto err;
+	}
 
-  if (newlen > base->cap) {
-    if (!base->can_resize) {
-//      OPENSSL_PUT_ERROR(CRYPTO, ERR_R_OVERFLOW);
-      goto err;
-    }
+	if (newlen > base->cap) {
+		if (!base->can_resize) {
+			CBB_ERROR(ERR_R_OVERFLOW);
+			goto err;
+		}
 
-    size_t newcap = base->cap * 2;
-    if (newcap < base->cap || newcap < newlen) {
-      newcap = newlen;
-    }
+		size_t newcap = base->cap * 2;
+		if (newcap < base->cap || newcap < newlen) {
+			newcap = newlen;
+		}
 
-    uint8_t *newbuf = recallocarray(base->buf, base->cap, newcap, 1);
-    if (newbuf == NULL) {
-      goto err;
-    }
+		uint8_t *newbuf = recallocarray(base->buf, base->cap, newcap, 1);
+		if (newbuf == NULL) {
+			goto err;
+		}
 
-    base->buf = newbuf;
-    base->cap = newcap;
-  }
+		base->buf = newbuf;
+		base->cap = newcap;
+	}
 
-  if (out) {
-    *out = base->buf + base->len;
-  }
+	if (out) {
+		*out = base->buf + base->len;
+	}
 
-  return 1;
+	return 1;
 
-err:
-  base->error = 1;
-  return 0;
+  err:
+	base->error = 1;
+	return 0;
 }
 
 
@@ -141,33 +141,27 @@ cbb_buffer_add(struct cbb_buffer_st *base, uint8_t **out, size_t len)
 	return 1;
 }
 
-int
-CBB_finish(CBB *cbb, uint8_t **out_data, size_t *out_len)
-{
+int CBB_finish(CBB *cbb, uint8_t **out_data, size_t *out_len) {
 	if (cbb->is_child) {
-		// TODO: nak3 error
+//    OPENSSL_PUT_ERROR(CRYPTO, ERR_R_SHOULD_NOT_HAVE_BEEN_CALLED);
 		return 0;
 	}
 
-	if (!CBB_flush(cbb))
+	if (!CBB_flush(cbb)) {
 		return 0;
+	}
 
-	if (cbb->u.base.can_resize && (out_data == NULL || out_len == NULL))
-		/*
-		 * |out_data| and |out_len| can only be NULL if the CBB is
-		 * fixed.
-		 */
+	if (cbb->u.base.can_resize && (out_data == NULL || out_len == NULL)) {
+		// |out_data| and |out_len| can only be NULL if the CBB is fixed.
 		return 0;
+	}
 
-	if (out_data != NULL && *out_data != NULL)
-		return 0;
-
-	if (out_data != NULL)
+	if (out_data != NULL) {
 		*out_data = cbb->u.base.buf;
-
-	if (out_len != NULL)
+	}
+	if (out_len != NULL) {
 		*out_len = cbb->u.base.len;
-
+	}
 	cbb->u.base.buf = NULL;
 	CBB_cleanup(cbb);
 	return 1;

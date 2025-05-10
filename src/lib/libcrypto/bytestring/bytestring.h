@@ -226,6 +226,7 @@ int CBS_peek_last_u8(CBS *cbs, uint8_t *out);
 // and constructed bits from the DER serialization.
 #define CBS_ASN1_TAG_SHIFT 24
 
+#if 0
 // CBS_ASN1_CONSTRUCTED may be ORed into a tag to set the constructed bit.
 #define CBS_ASN1_CONSTRUCTED (0x20u << CBS_ASN1_TAG_SHIFT)
 
@@ -235,6 +236,7 @@ int CBS_peek_last_u8(CBS *cbs, uint8_t *out);
 #define CBS_ASN1_APPLICATION (0x40u << CBS_ASN1_TAG_SHIFT)
 #define CBS_ASN1_CONTEXT_SPECIFIC (0x80u << CBS_ASN1_TAG_SHIFT)
 #define CBS_ASN1_PRIVATE (0xc0u << CBS_ASN1_TAG_SHIFT)
+#endif
 
 // CBS_ASN1_CLASS_MASK may be ANDed with a tag to query its class. This will
 // give one of the four values above.
@@ -242,6 +244,7 @@ int CBS_peek_last_u8(CBS *cbs, uint8_t *out);
 
 // CBS_ASN1_TAG_NUMBER_MASK may be ANDed with a tag to query its number.
 #define CBS_ASN1_TAG_NUMBER_MASK ((1u << (5 + CBS_ASN1_TAG_SHIFT)) - 1)
+
 
 /*
  * Bits 5 to 1 are the tag number.  See X.680 section 8.6 for tag numbers of
