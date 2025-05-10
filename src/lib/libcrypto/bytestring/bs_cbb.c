@@ -18,6 +18,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "bytestring.h"
 
@@ -61,11 +62,8 @@ CBB_init(CBB *cbb, size_t initial_capacity)
 int
 CBB_init_fixed(CBB *cbb, uint8_t *buf, size_t len)
 {
-	memset(cbb, 0, sizeof(*cbb));
-
-	if (!cbb_init(cbb, buf, len, 0))
-		return 0;
-
+	CBB_zero(cbb);
+	cbb_init(cbb, buf, len, 0);
 	return 1;
 }
 
@@ -75,8 +73,7 @@ CBB_cleanup(CBB *cbb)
 	// Child |CBB|s are non-owning. They are implicitly discarded and should not
 	// be used with |CBB_cleanup| or |ScopedCBB|.
 	//
-	// TODO: assert
-	//	assert(!cbb->is_child);
+	assert(!cbb->is_child);
 	if (cbb->is_child) {
 		return;
 	}
@@ -95,14 +92,12 @@ static int cbb_buffer_reserve(struct cbb_buffer_st *base, uint8_t **out,
   size_t newlen = base->len + len;
   if (newlen < base->len) {
     // Overflow
-//	  TODO
 //    OPENSSL_PUT_ERROR(CRYPTO, ERR_R_OVERFLOW);
     goto err;
   }
 
   if (newlen > base->cap) {
     if (!base->can_resize) {
-	    // TODO
 //      OPENSSL_PUT_ERROR(CRYPTO, ERR_R_OVERFLOW);
       goto err;
     }
@@ -111,8 +106,8 @@ static int cbb_buffer_reserve(struct cbb_buffer_st *base, uint8_t **out,
     if (newcap < base->cap || newcap < newlen) {
       newcap = newlen;
     }
-    uint8_t *newbuf = recallocarray(base->buf, base->cap, newcap, 1);
 
+    uint8_t *newbuf = recallocarray(base->buf, base->cap, newcap, 1);
     if (newbuf == NULL) {
       goto err;
     }
@@ -133,6 +128,8 @@ err:
 }
 
 
+
+
 static int
 cbb_buffer_add(struct cbb_buffer_st *base, uint8_t **out, size_t len)
 {
@@ -141,28 +138,6 @@ cbb_buffer_add(struct cbb_buffer_st *base, uint8_t **out, size_t len)
 	}
 	// This will not overflow or |cbb_buffer_reserve| would have failed.
 	base->len += len;
-	return 1;
-}
-
-static int
-cbb_add_u(CBB *cbb, uint32_t v, size_t len_len)
-{
-	uint8_t *buf;
-	size_t i;
-
-	if (len_len == 0)
-		return 1;
-
-	if (len_len > 4)
-		return 0;
-
-	if (!CBB_flush(cbb) || !cbb_buffer_add(&cbb->u.base, &buf, len_len))
-		return 0;
-
-	for (i = len_len - 1; i < len_len; i--) {
-		buf[i] = v;
-		v >>= 8;
-	}
 	return 1;
 }
 
@@ -205,6 +180,31 @@ static struct cbb_buffer_st *cbb_get_base(CBB *cbb) {
 	return &cbb->u.base;
 }
 
+// TODO
+static void cbb_on_error(CBB *cbb) {
+  // Due to C's lack of destructors and |CBB|'s auto-flushing API, a failing
+  // |CBB|-taking function may leave a dangling pointer to a child |CBB|. As a
+  // result, the convention is callers may not write to |CBB|s that have failed.
+  // But, as a safety measure, we lock the |CBB| into an error state. Once the
+  // error bit is set, |cbb->child| will not be read.
+  //
+  // TODO(davidben): This still isn't quite ideal. A |CBB| function *outside*
+  // this file may originate an error while the |CBB| points to a local child.
+  // In that case we don't set the error bit and are reliant on the error
+  // convention. Perhaps we allow |CBB_cleanup| on child |CBB|s and make every
+  // child's |CBB_cleanup| set the error bit if unflushed. That will be
+  // convenient for C++ callers, but very tedious for C callers. So C callers
+  // perhaps should get a |CBB_on_error| function that can be, less tediously,
+  // stuck in a |goto err| block.
+  cbb_get_base(cbb)->error = 1;
+
+  // Clearing the pointer is not strictly necessary, but GCC's dangling pointer
+  // warning does not know |cbb->child| will not be read once |error| is set
+  // above.
+  cbb->child = NULL;
+}
+
+
 
 /*
  * CBB_flush recurses and then writes out any pending length prefix. The current
@@ -215,9 +215,12 @@ int
 CBB_flush(CBB *cbb)
 {
 	size_t child_start, i, len;
+	struct cbb_buffer_st *base;
 
-	struct cbb_buffer_st *base = cbb_get_base(cbb);
-
+	// If |base| has hit an error, the buffer is in an undefined state, so
+	// fail all following calls. In particular, |cbb->child| may point to invalid
+	// memory.
+	base = cbb_get_base(cbb);
 	if (base == NULL || base->error)
 		return 0;
 
@@ -225,15 +228,15 @@ CBB_flush(CBB *cbb)
 		return 1;
 
 	// TODO: nak3
-//	assert(cbb->child->is_child);
+	assert(cbb->child->is_child);
 	struct cbb_child_st *child = &cbb->child->u.child;
-//	assert(child->base == base);
-
+	assert(child->base == base);
 	child_start = child->offset + child->pending_len_len;
 
 	if (!CBB_flush(cbb->child) || child_start < child->offset ||
-	    base->len < child_start)
-		return 0;
+	    base->len < child_start) {
+		goto err;
+	}
 
 	len = base->len - child_start;
 
@@ -249,42 +252,35 @@ CBB_flush(CBB *cbb)
 		size_t len_len = 1;  /* total number of length octets */
 		uint8_t initial_length_byte;
 
-		/* We already wrote 1 byte for the length. */
-		if (child->pending_len_len != 1)
-			return 0;
+		assert(child->pending_len_len == 1);
 
 		/* Check for long form */
-		if (len > 0xfffffffe)
-			return 0;	/* 0xffffffff is reserved */
-		else if (len > 0xffffff)
+		if (len > 0xfffffffe) {
+			goto err;
+		} else if (len > 0xffffff) {
 			len_len = 5;
-		else if (len > 0xffff)
+			initial_length_byte = 0x80 | 4;
+		} else if (len > 0xffff) {
 			len_len = 4;
-		else if (len > 0xff)
+			initial_length_byte = 0x80 | 3;
+		} else if (len > 0xff) {
 			len_len = 3;
-		else if (len > 0x7f)
+			initial_length_byte = 0x80 | 2;
+		} else if (len > 0x7f) {
 			len_len = 2;
-
-		if (len_len == 1) {
-			/* For short form, the initial byte is the length. */
-			initial_length_byte = len;
-			len = 0;
-
+			initial_length_byte = 0x80 | 1;
 		} else {
-			/*
-			 * For long form, the initial byte is the number of
-			 * subsequent length octets (plus bit 8 set).
-			 */
-			initial_length_byte = 0x80 | (len_len - 1);
+			len_len = 1;
+			initial_length_byte = (uint8_t)len;
+			len = 0;
+		}
 
-			/*
-			 * We need to move the contents along in order to make
-			 * space for the long form length octets.
-			 */
+		if (len_len != 1) {
+			// We need to move the contents along in order to make space.
 			size_t extra_bytes = len_len - 1;
-			if (!cbb_buffer_add(base, NULL, extra_bytes))
-				return 0;
-
+			if (!cbb_buffer_add(base, NULL, extra_bytes)) {
+				goto err;
+			}
 			memmove(base->buf + child_start + extra_bytes,
 			    base->buf + child_start, len);
 		}
@@ -307,8 +303,30 @@ CBB_flush(CBB *cbb)
 	/* cbb->offset = 0; */
 
 	return 1;
+ err:
+	cbb_on_error(cbb);
+	return 0;
 }
 
+static int cbb_add_u(CBB *cbb, uint64_t v, size_t len_len) {
+	uint8_t *buf;
+	if (!CBB_add_space(cbb, &buf, len_len)) {
+		return 0;
+	}
+
+	for (size_t i = len_len - 1; i < len_len; i--) {
+		buf[i] = v;
+		v >>= 8;
+	}
+
+	// |v| must fit in |len_len| bytes.
+	if (v != 0) {
+		cbb_on_error(cbb);
+		return 0;
+	}
+
+	return 1;
+}
 
 void
 CBB_discard_child(CBB *cbb)
