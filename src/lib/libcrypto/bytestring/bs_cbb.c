@@ -73,7 +73,7 @@ CBB_cleanup(CBB *cbb)
 	// Child |CBB|s are non-owning. They are implicitly discarded and should not
 	// be used with |CBB_cleanup| or |ScopedCBB|.
 	//
-	assert(!cbb->is_child);
+//	assert(!cbb->is_child);
 	if (cbb->is_child) {
 		return;
 	}

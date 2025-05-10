@@ -209,6 +209,7 @@ int CBS_peek_last_u8(CBS *cbs, uint8_t *out);
  * since tag number 31 is a reserved value to indicate multiple octets.
  */
 
+#if 0
 /* Bits 8 and 7: class tag type: See X.690 section 8.1.2.2. */
 #define CBS_ASN1_UNIVERSAL		0x00
 #define CBS_ASN1_APPLICATION		0x40
@@ -219,6 +220,7 @@ int CBS_peek_last_u8(CBS *cbs, uint8_t *out);
 #define CBS_ASN1_PRIMITIVE	0x00
 #define CBS_ASN1_CONSTRUCTED	0x20
 
+#endif
 
 // TODO: nak3
 
@@ -226,7 +228,7 @@ int CBS_peek_last_u8(CBS *cbs, uint8_t *out);
 // and constructed bits from the DER serialization.
 #define CBS_ASN1_TAG_SHIFT 24
 
-#if 0
+
 // CBS_ASN1_CONSTRUCTED may be ORed into a tag to set the constructed bit.
 #define CBS_ASN1_CONSTRUCTED (0x20u << CBS_ASN1_TAG_SHIFT)
 
@@ -236,7 +238,7 @@ int CBS_peek_last_u8(CBS *cbs, uint8_t *out);
 #define CBS_ASN1_APPLICATION (0x40u << CBS_ASN1_TAG_SHIFT)
 #define CBS_ASN1_CONTEXT_SPECIFIC (0x80u << CBS_ASN1_TAG_SHIFT)
 #define CBS_ASN1_PRIVATE (0xc0u << CBS_ASN1_TAG_SHIFT)
-#endif
+
 
 // CBS_ASN1_CLASS_MASK may be ANDed with a tag to query its class. This will
 // give one of the four values above.
@@ -264,6 +266,7 @@ int CBS_peek_last_u8(CBS *cbs, uint8_t *out);
  * In DER, bitstring and octetstring are required to be primitive
  * (X.690 section 10.2).
  */
+#if 0
 #define CBS_ASN1_BOOLEAN     (CBS_ASN1_UNIVERSAL | CBS_ASN1_PRIMITIVE | 0x1)
 #define CBS_ASN1_INTEGER     (CBS_ASN1_UNIVERSAL | CBS_ASN1_PRIMITIVE | 0x2)
 #define CBS_ASN1_BITSTRING   (CBS_ASN1_UNIVERSAL | CBS_ASN1_PRIMITIVE | 0x3)
@@ -272,6 +275,33 @@ int CBS_peek_last_u8(CBS *cbs, uint8_t *out);
 #define CBS_ASN1_ENUMERATED  (CBS_ASN1_UNIVERSAL | CBS_ASN1_PRIMITIVE | 0xa)
 #define CBS_ASN1_SEQUENCE    (CBS_ASN1_UNIVERSAL | CBS_ASN1_CONSTRUCTED | 0x10)
 #define CBS_ASN1_SET         (CBS_ASN1_UNIVERSAL | CBS_ASN1_CONSTRUCTED | 0x11)
+#endif
+
+// The following values are constants for UNIVERSAL tags. Note these constants
+// include the constructed bit.
+#define CBS_ASN1_BOOLEAN 0x1u
+#define CBS_ASN1_INTEGER 0x2u
+#define CBS_ASN1_BITSTRING 0x3u
+#define CBS_ASN1_OCTETSTRING 0x4u
+#define CBS_ASN1_NULL 0x5u
+#define CBS_ASN1_OBJECT 0x6u
+#define CBS_ASN1_ENUMERATED 0xau
+#define CBS_ASN1_UTF8STRING 0xcu
+#define CBS_ASN1_SEQUENCE (0x10u | CBS_ASN1_CONSTRUCTED)
+#define CBS_ASN1_SET (0x11u | CBS_ASN1_CONSTRUCTED)
+#define CBS_ASN1_NUMERICSTRING 0x12u
+#define CBS_ASN1_PRINTABLESTRING 0x13u
+#define CBS_ASN1_T61STRING 0x14u
+#define CBS_ASN1_VIDEOTEXSTRING 0x15u
+#define CBS_ASN1_IA5STRING 0x16u
+#define CBS_ASN1_UTCTIME 0x17u
+#define CBS_ASN1_GENERALIZEDTIME 0x18u
+#define CBS_ASN1_GRAPHICSTRING 0x19u
+#define CBS_ASN1_VISIBLESTRING 0x1au
+#define CBS_ASN1_GENERALSTRING 0x1bu
+#define CBS_ASN1_UNIVERSALSTRING 0x1cu
+#define CBS_ASN1_BMPSTRING 0x1eu
+
 
 /*
  * CBS_get_asn1 sets |*out| to the contents of DER-encoded, ASN.1 element (not

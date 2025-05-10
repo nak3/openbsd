@@ -574,7 +574,7 @@ test_cbb_asn1(void)
 
 	CHECK_GOTO(CBB_init(&cbb, 0));
 	alloc = 1;
-	CHECK_GOTO(CBB_add_asn1(&cbb, &contents, 0x30));
+	CHECK_GOTO(CBB_add_asn1(&cbb, &contents, CBS_ASN1_SEQUENCE));
 	CHECK_GOTO(CBB_add_bytes(&contents, (const uint8_t*) "\x01\x02\x03",
 	    3));
 	CHECK_GOTO(CBB_finish(&cbb, &buf, &buf_len));
