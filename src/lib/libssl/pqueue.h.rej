@@ -1,0 +1,24 @@
+@@ -61,7 +61,7 @@
+ #ifndef HEADER_PQUEUE_H
+ #define HEADER_PQUEUE_H
+ 
+-__BEGIN_HIDDEN_DECLS
++__BEGIN_HIDDEN_DECLS
+ 
+ typedef struct _pqueue *pqueue;
+ 
+@@ -82,12 +82,12 @@
+ pitem *pqueue_insert(pqueue pq, pitem *item);
+ pitem *pqueue_peek(pqueue pq);
+ pitem *pqueue_pop(pqueue pq);
+-pitem *pqueue_find(pqueue pq, unsigned char *prio64be);
++pitem *pqueue_find(pqueue pq, const unsigned char *prio64be);
+ pitem *pqueue_iterator(pqueue pq);
+ pitem *pqueue_next(piterator *iter);
+ 
+ int    pqueue_size(pqueue pq);
+ 
+-__END_HIDDEN_DECLS
++__END_HIDDEN_DECLS
+ 
+ #endif /* ! HEADER_PQUEUE_H */

@@ -23,9 +23,23 @@
 
 #define CBB_INITIAL_SIZE 64
 
+// TODO
+void CBB_zero(CBB *cbb) { memset(cbb, 0, sizeof(CBB)); }
+
 static int
-cbb_init(CBB *cbb, uint8_t *buf, size_t cap)
+cbb_init(CBB *cbb, uint8_t *buf, size_t cap, int can_resize)
 {
+
+
+	cbb->is_child = 0;
+	cbb->child = NULL;
+	cbb->u.base.buf = buf;
+	cbb->u.base.len = 0;
+	cbb->u.base.cap = cap;
+	cbb->u.base.can_resize = can_resize;
+	cbb->u.base.error = 0; // 任意
+
+#if 0
 	struct cbb_buffer_st *base;
 
 	if ((base = calloc(1, sizeof(struct cbb_buffer_st))) == NULL)
@@ -38,7 +52,7 @@ cbb_init(CBB *cbb, uint8_t *buf, size_t cap)
 
 	cbb->base = base;
 	cbb->is_top_level = 1;
-
+#endif
 	return 1;
 }
 
@@ -55,10 +69,7 @@ CBB_init(CBB *cbb, size_t initial_capacity)
 	if ((buf = calloc(1, initial_capacity)) == NULL)
 		return 0;
 
-	if (!cbb_init(cbb, buf, initial_capacity)) {
-		free(buf);
-		return 0;
-	}
+	cbb_init(cbb, buf, initial_capacity, /*can_resize=*/1);
 
 	return 1;
 }
@@ -68,10 +79,8 @@ CBB_init_fixed(CBB *cbb, uint8_t *buf, size_t len)
 {
 	memset(cbb, 0, sizeof(*cbb));
 
-	if (!cbb_init(cbb, buf, len))
+	if (!cbb_init(cbb, buf, len, 0))
 		return 0;
-
-	cbb->base->can_resize = 0;
 
 	return 1;
 }
@@ -79,13 +88,19 @@ CBB_init_fixed(CBB *cbb, uint8_t *buf, size_t len)
 void
 CBB_cleanup(CBB *cbb)
 {
-	if (cbb->base) {
-		if (cbb->base->can_resize)
-			freezero(cbb->base->buf, cbb->base->cap);
-		free(cbb->base);
+	// Child |CBB|s are non-owning. They are implicitly discarded and should not
+	// be used with |CBB_cleanup| or |ScopedCBB|.
+	//
+	// TODO: assert
+	//	assert(!cbb->is_child);
+	if (cbb->is_child) {
+		return;
 	}
-	cbb->base = NULL;
-	cbb->child = NULL;
+
+	if (cbb->u.base.can_resize) {
+		// TODO: free
+//		OPENSSL_free(cbb->u.base.buf);
+	}
 }
 
 static int
@@ -138,7 +153,7 @@ cbb_add_u(CBB *cbb, uint32_t v, size_t len_len)
 	if (len_len > 4)
 		return 0;
 
-	if (!CBB_flush(cbb) || !cbb_buffer_add(cbb->base, &buf, len_len))
+	if (!CBB_flush(cbb) || !cbb_buffer_add(&cbb->u.base, &buf, len_len))
 		return 0;
 
 	for (i = len_len - 1; i < len_len; i--) {
@@ -151,13 +166,15 @@ cbb_add_u(CBB *cbb, uint32_t v, size_t len_len)
 int
 CBB_finish(CBB *cbb, uint8_t **out_data, size_t *out_len)
 {
-	if (!cbb->is_top_level)
+	if (cbb->is_child) {
+		// TODO: nak3 error
 		return 0;
+	}
 
 	if (!CBB_flush(cbb))
 		return 0;
 
-	if (cbb->base->can_resize && (out_data == NULL || out_len == NULL))
+	if (cbb->u.base.can_resize && (out_data == NULL || out_len == NULL))
 		/*
 		 * |out_data| and |out_len| can only be NULL if the CBB is
 		 * fixed.
@@ -168,15 +185,23 @@ CBB_finish(CBB *cbb, uint8_t **out_data, size_t *out_len)
 		return 0;
 
 	if (out_data != NULL)
-		*out_data = cbb->base->buf;
+		*out_data = cbb->u.base.buf;
 
 	if (out_len != NULL)
-		*out_len = cbb->base->len;
+		*out_len = cbb->u.base.len;
 
-	cbb->base->buf = NULL;
+	cbb->u.base.buf = NULL;
 	CBB_cleanup(cbb);
 	return 1;
 }
+
+static struct cbb_buffer_st *cbb_get_base(CBB *cbb) {
+	if (cbb->is_child) {
+		return cbb->u.child.base;
+	}
+	return &cbb->u.base;
+}
+
 
 /*
  * CBB_flush recurses and then writes out any pending length prefix. The current
@@ -188,21 +213,28 @@ CBB_flush(CBB *cbb)
 {
 	size_t child_start, i, len;
 
-	if (cbb->base == NULL)
+	struct cbb_buffer_st *base = cbb_get_base(cbb);
+
+	if (base == NULL || base->error)
 		return 0;
 
-	if (cbb->child == NULL || cbb->pending_len_len == 0)
+	if (cbb->child == NULL)
 		return 1;
 
-	child_start = cbb->offset + cbb->pending_len_len;
+	// TODO: nak3
+//	assert(cbb->child->is_child);
+	struct cbb_child_st *child = &cbb->child->u.child;
+//	assert(child->base == base);
 
-	if (!CBB_flush(cbb->child) || child_start < cbb->offset ||
-	    cbb->base->len < child_start)
+	child_start = child->offset + child->pending_len_len;
+
+	if (!CBB_flush(cbb->child) || child_start < child->offset ||
+	    base->len < child_start)
 		return 0;
 
-	len = cbb->base->len - child_start;
+	len = base->len - child_start;
 
-	if (cbb->pending_is_asn1) {
+	if (child->pending_is_asn1) {
 		/*
 		 * For ASN.1, we assumed that we were using short form which
 		 * only requires a single byte for the length octet.
@@ -215,7 +247,7 @@ CBB_flush(CBB *cbb)
 		uint8_t initial_length_byte;
 
 		/* We already wrote 1 byte for the length. */
-		if (cbb->pending_len_len != 1)
+		if (child->pending_len_len != 1)
 			return 0;
 
 		/* Check for long form */
@@ -247,31 +279,33 @@ CBB_flush(CBB *cbb)
 			 * space for the long form length octets.
 			 */
 			size_t extra_bytes = len_len - 1;
-			if (!cbb_buffer_add(cbb->base, NULL, extra_bytes))
+			if (!cbb_buffer_add(base, NULL, extra_bytes))
 				return 0;
 
-			memmove(cbb->base->buf + child_start + extra_bytes,
-			    cbb->base->buf + child_start, len);
+			memmove(base->buf + child_start + extra_bytes,
+			    base->buf + child_start, len);
 		}
-		cbb->base->buf[cbb->offset++] = initial_length_byte;
-		cbb->pending_len_len = len_len - 1;
+		base->buf[child->offset++] = initial_length_byte;
+		child->pending_len_len = len_len - 1;
 	}
 
-	for (i = cbb->pending_len_len - 1; i < cbb->pending_len_len; i--) {
-		cbb->base->buf[cbb->offset + i] = len;
+	for (i = child->pending_len_len - 1; i < child->pending_len_len; i--) {
+		base->buf[child->offset + i] = len;
 		len >>= 8;
 	}
 	if (len != 0)
 		return 0;
 
-	cbb->child->base = NULL;
+	child->base = NULL;
 	cbb->child = NULL;
-	cbb->pending_len_len = 0;
-	cbb->pending_is_asn1 = 0;
-	cbb->offset = 0;
+
+	/* cbb->pending_len_len = 0; */
+	/* cbb->pending_is_asn1 = 0; */
+	/* cbb->offset = 0; */
 
 	return 1;
 }
+
 
 void
 CBB_discard_child(CBB *cbb)
@@ -279,35 +313,51 @@ CBB_discard_child(CBB *cbb)
 	if (cbb->child == NULL)
 		return;
 
-	cbb->base->len = cbb->offset;
+	struct cbb_buffer_st *base = cbb_get_base(cbb);
+	// TODO: nak3
+//	assert(cbb->child->is_child);
+	base->len = cbb->child->u.child.offset;
 
-	cbb->child->base = NULL;
+	cbb->child->u.child.base = NULL;
 	cbb->child = NULL;
-	cbb->pending_len_len = 0;
-	cbb->pending_is_asn1 = 0;
-	cbb->offset = 0;
 }
+
+static int cbb_add_child(CBB *cbb, CBB *out_child, uint8_t len_len,
+                         int is_asn1) {
+  /* assert(cbb->child == NULL); */
+  /* assert(!is_asn1 || len_len == 1); */
+  struct cbb_buffer_st *base = cbb_get_base(cbb);
+  size_t offset = base->len;
+
+  // Reserve space for the length prefix.
+  uint8_t *prefix_bytes;
+  if (!cbb_buffer_add(base, &prefix_bytes, len_len)) {
+    return 0;
+  }
+
+  // TODO
+  //OPENSSL_memset(prefix_bytes, 0, len_len);
+  memset(prefix_bytes, 0, len_len);
+
+  CBB_zero(out_child);
+  out_child->is_child = 1;
+  out_child->u.child.base = base;
+  out_child->u.child.offset = offset;
+  out_child->u.child.pending_len_len = len_len;
+  out_child->u.child.pending_is_asn1 = is_asn1;
+  cbb->child = out_child;
+  return 1;
+}
+
 
 static int
 cbb_add_length_prefixed(CBB *cbb, CBB *out_contents, size_t len_len)
 {
-	uint8_t *prefix_bytes;
-
-	if (!CBB_flush(cbb))
+	if (!CBB_flush(cbb)) {
 		return 0;
+	}
 
-	cbb->offset = cbb->base->len;
-	if (!cbb_buffer_add(cbb->base, &prefix_bytes, len_len))
-		return 0;
-
-	memset(prefix_bytes, 0, len_len);
-	memset(out_contents, 0, sizeof(CBB));
-	out_contents->base = cbb->base;
-	cbb->child = out_contents;
-	cbb->pending_len_len = len_len;
-	cbb->pending_is_asn1 = 0;
-
-	return 1;
+	return cbb_add_child(cbb, out_contents, len_len, /*is_asn1=*/0);
 }
 
 int
@@ -334,33 +384,88 @@ CBB_add_u32_length_prefixed(CBB *cbb, CBB *out_contents)
 	return cbb_add_length_prefixed(cbb, out_contents, 4);
 }
 
+// add_base128_integer encodes |v| as a big-endian base-128 integer where the
+// high bit of each byte indicates where there is more data. This is the
+// encoding used in DER for both high tag number form and OID components.
+static int add_base128_integer(CBB *cbb, uint64_t v) {
+  unsigned len_len = 0;
+  uint64_t copy = v;
+  while (copy > 0) {
+    len_len++;
+    copy >>= 7;
+  }
+  if (len_len == 0) {
+    len_len = 1;  // Zero is encoded with one byte.
+  }
+  for (unsigned i = len_len - 1; i < len_len; i--) {
+    uint8_t byte = (v >> (7 * i)) & 0x7f;
+    if (i != 0) {
+      // The high bit denotes whether there is more data.
+      byte |= 0x80;
+    }
+    if (!CBB_add_u8(cbb, byte)) {
+      return 0;
+    }
+  }
+  return 1;
+}
+
+
+// TODO: nak3 move to base.h
+
+// CBS_ASN1_TAG is the type used by |CBS| and |CBB| for ASN.1 tags. See that
+// header for details. This type is defined in base.h as a forward declaration.
+typedef uint32_t CBS_ASN1_TAG;
+
+
+
 int
 CBB_add_asn1(CBB *cbb, CBB *out_contents, unsigned int tag)
 {
-	if (tag > UINT8_MAX)
-		return 0;
+	/* if (tag > UINT8_MAX) */
+	/* 	return 0; */
 
-	/* Long form identifier octets are not supported. */
-	if ((tag & 0x1f) == 0x1f)
-		return 0;
+	/* /\* Long form identifier octets are not supported. *\/ */
+	/* if ((tag & 0x1f) == 0x1f) */
+	/* 	return 0; */
 
-	/* Short-form identifier octet only needs a single byte */
-	if (!CBB_flush(cbb) || !CBB_add_u8(cbb, tag))
-		return 0;
+	/* /\* Short-form identifier octet only needs a single byte *\/ */
+	/* if (!CBB_flush(cbb) || !CBB_add_u8(cbb, tag)) */
+	/* 	return 0; */
 
-	/*
-	 * Add 1 byte to cover the short-form length octet case.  If it turns
-	 * out we need long-form, it will be extended later.
-	 */
-	cbb->offset = cbb->base->len;
-	if (!CBB_add_u8(cbb, 0))
-		return 0;
+	/* /\* */
+	/*  * Add 1 byte to cover the short-form length octet case.  If it turns */
+	/*  * out we need long-form, it will be extended later. */
+	/*  *\/ */
+	/* cbb->offset = cbb->base->len; */
+	/* if (!CBB_add_u8(cbb, 0)) */
+	/* 	return 0; */
 
-	memset(out_contents, 0, sizeof(CBB));
-	out_contents->base = cbb->base;
-	cbb->child = out_contents;
-	cbb->pending_len_len = 1;
-	cbb->pending_is_asn1 = 1;
+	/* memset(out_contents, 0, sizeof(CBB)); */
+	/* out_contents->base = cbb->base; */
+	/* cbb->child = out_contents; */
+	/* cbb->pending_len_len = 1; */
+	/* cbb->pending_is_asn1 = 1; */
+
+  if (!CBB_flush(cbb)) {
+    return 0;
+  }
+
+  // Split the tag into leading bits and tag number.
+  uint8_t tag_bits = (tag >> CBS_ASN1_TAG_SHIFT) & 0xe0;
+  CBS_ASN1_TAG tag_number = tag & CBS_ASN1_TAG_NUMBER_MASK;
+  if (tag_number >= 0x1f) {
+    // Set all the bits in the tag number to signal high tag number form.
+    if (!CBB_add_u8(cbb, tag_bits | 0x1f) ||
+        !add_base128_integer(cbb, tag_number)) {
+      return 0;
+    }
+  } else if (!CBB_add_u8(cbb, tag_bits | tag_number)) {
+    return 0;
+  }
+
+  // Reserve one byte of length prefix. |CBB_flush| will finish it later.
+  return cbb_add_child(cbb, out_contents, /*len_len=*/1, /*is_asn1=*/1);
 
 	return 1;
 }
@@ -368,19 +473,19 @@ CBB_add_asn1(CBB *cbb, CBB *out_contents, unsigned int tag)
 int
 CBB_add_bytes(CBB *cbb, const uint8_t *data, size_t len)
 {
-	uint8_t *dest;
-
-	if (!CBB_flush(cbb) || !cbb_buffer_add(cbb->base, &dest, len))
+	uint8_t *out;
+	if (!CBB_add_space(cbb, &out, len)) {
 		return 0;
+	}
 
-	memcpy(dest, data, len);
+	memcpy(out, data, len);
 	return 1;
 }
 
 int
 CBB_add_space(CBB *cbb, uint8_t **out_data, size_t len)
 {
-	if (!CBB_flush(cbb) || !cbb_buffer_add(cbb->base, out_data, len))
+	if (!CBB_flush(cbb) || !cbb_buffer_add(cbb_get_base(cbb), out_data, len))
 		return 0;
 
 	memset(*out_data, 0, len);

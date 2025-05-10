@@ -1,0 +1,67 @@
+@@ -59,13 +59,10 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
++
+ #include "pqueue.h"
+ 
+-unsigned char prio1[8] = "supercal";
+-unsigned char prio2[8] = "ifragili";
+-unsigned char prio3[8] = "sticexpi";
+-
+-static const char *pq_expected[3] = {
++static const unsigned char *pq_expected[3] = {
+        "ifragili",
+        "sticexpi",
+        "supercal"
+@@ -74,16 +71,17 @@
+ static int
+ test_pqueue(void)
+ {
++       const unsigned char *prio1 = pq_expected[2];
++       const unsigned char *prio2 = pq_expected[0];
++       const unsigned char *prio3 = pq_expected[1];
+        pqueue pq = NULL;
+        pitem *item = NULL;
+        pitem *iter = NULL;
+-       char buf[256];
+        int i = 0;
+        int failed = 1;
+ 
+-       pq = pqueue_new();
+-       if (pq == NULL)
+-               return failed;
++       if ((pq = pqueue_new()) == NULL)
++               goto failure;
+ 
+        if (!pqueue_insert(pq, pitem_new(prio3, NULL)))
+                goto failure;
+@@ -102,8 +100,10 @@
+        if ((item = pqueue_find(pq, prio3)) == NULL)
+                goto failure;
+ 
+-       item = pqueue_peek(pq);
+-       if (item == NULL || memcmp(item->priority, pq_expected[0], 8))
++       if ((item = pqueue_peek(pq)) == NULL)
++               goto failure;
++
++       if (memcmp(item->priority, pq_expected[0], 8))
+                goto failure;
+ 
+        iter = pqueue_iterator(pq);
+@@ -113,12 +113,9 @@
+                i++;
+        }
+ 
+-       if (i != 3)
+-               goto failure;
+-
+-       failed = 0;
+-
+-failure:
++       failed = (i != 3);
++
++ failure:
+ 
+ 
+ 
