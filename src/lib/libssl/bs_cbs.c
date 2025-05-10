@@ -21,6 +21,8 @@
 
 #include "bytestring.h"
 
+#include <stdio.h>
+
 void
 CBS_init(CBS *cbs, const uint8_t *data, size_t len)
 {
@@ -345,6 +347,7 @@ CBS_get_any_asn1_element(CBS *cbs, CBS *out, unsigned int *out_tag,
 	    out_header_len, 1);
 }
 
+
 /*
  * Review X.690 for details on ASN.1 DER encoding.
  *
@@ -450,13 +453,33 @@ cbs_get_asn1(CBS *cbs, CBS *out, unsigned int tag_value, int skip_header)
 	if (out == NULL)
 		out = &throwaway;
 
+#if 0
+	printf("@@@ hoge0 tag = %d\n");
 	if (!CBS_get_any_asn1_element(cbs, out, &tag, &header_len) ||
 	    tag != tag_value)
 		return 0;
+#else
+	if (!CBS_get_any_asn1_element(cbs, out, &tag, &header_len)) {
+		fprintf(stderr, "@@@ CBS_get_any_asn1_element failed\n");
+	       	return 0;
+
+	}
+	fprintf(stderr, "@@@ compare tag: actual = 0x%02x, expected = 0x%02x\n",
+		      	tag, tag_value);
+
+	uint8_t expected_tag = ((tag_value >> CBS_ASN1_TAG_SHIFT) & 0xe0) |
+	                       (tag_value & CBS_ASN1_TAG_NUMBER_MASK);
+
+	fprintf(stderr, "@@@ compare tag: actual = 0x%02x, expected = 0x%02x (from tag_value = 0x%08x)\n",
+	    tag, expected_tag, tag_value);
+
+	if (tag != expected_tag)
+		return 0;
+#endif
 
 	if (skip_header && !CBS_skip(out, header_len))
 		return 0;
-
+	
 	return 1;
 }
 
@@ -531,11 +554,13 @@ int
 CBS_get_optional_asn1(CBS *cbs, CBS *out, int *out_present, unsigned int tag)
 {
 	if (CBS_peek_asn1_tag(cbs, tag)) {
+		fprintf(stderr, "@@@ tag matched for optional tag: 0x%08x\n", tag);
 		if (!CBS_get_asn1(cbs, out, tag))
 			return 0;
 
 		*out_present = 1;
 	} else {
+		fprintf(stderr, "@@@ optional tag 0x%08x not present\n", tag);
 		*out_present = 0;
 	}
 	return 1;
