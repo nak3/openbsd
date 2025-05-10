@@ -92,13 +92,11 @@ static int cbb_buffer_reserve(struct cbb_buffer_st *base, uint8_t **out,
 	size_t newlen = base->len + len;
 	if (newlen < base->len) {
 		// Overflow
-		CBB_ERROR(ERR_R_OVERFLOW);
 		goto err;
 	}
 
 	if (newlen > base->cap) {
 		if (!base->can_resize) {
-			CBB_ERROR(ERR_R_OVERFLOW);
 			goto err;
 		}
 
