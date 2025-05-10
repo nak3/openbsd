@@ -1,4 +1,4 @@
-/*	$OpenBSD: bytestring.h,v 1.6 2024/12/05 19:57:37 tb Exp $	*/
+/*	$OpenBSD: bytestring.h,v 1.26 2024/12/05 19:57:37 tb Exp $	*/
 /*
  * Copyright (c) 2014, Google Inc.
  *
@@ -219,6 +219,30 @@ int CBS_peek_last_u8(CBS *cbs, uint8_t *out);
 #define CBS_ASN1_PRIMITIVE	0x00
 #define CBS_ASN1_CONSTRUCTED	0x20
 
+
+// TODO: nak3
+
+// CBS_ASN1_TAG_SHIFT is how much the in-memory representation shifts the class
+// and constructed bits from the DER serialization.
+#define CBS_ASN1_TAG_SHIFT 24
+
+// CBS_ASN1_CONSTRUCTED may be ORed into a tag to set the constructed bit.
+#define CBS_ASN1_CONSTRUCTED (0x20u << CBS_ASN1_TAG_SHIFT)
+
+// The following values specify the tag class and may be ORed into a tag number
+// to produce the final tag. If none is used, the tag will be UNIVERSAL.
+#define CBS_ASN1_UNIVERSAL (0u << CBS_ASN1_TAG_SHIFT)
+#define CBS_ASN1_APPLICATION (0x40u << CBS_ASN1_TAG_SHIFT)
+#define CBS_ASN1_CONTEXT_SPECIFIC (0x80u << CBS_ASN1_TAG_SHIFT)
+#define CBS_ASN1_PRIVATE (0xc0u << CBS_ASN1_TAG_SHIFT)
+
+// CBS_ASN1_CLASS_MASK may be ANDed with a tag to query its class. This will
+// give one of the four values above.
+#define CBS_ASN1_CLASS_MASK (0xc0u << CBS_ASN1_TAG_SHIFT)
+
+// CBS_ASN1_TAG_NUMBER_MASK may be ANDed with a tag to query its number.
+#define CBS_ASN1_TAG_NUMBER_MASK ((1u << (5 + CBS_ASN1_TAG_SHIFT)) - 1)
+
 /*
  * Bits 5 to 1 are the tag number.  See X.680 section 8.6 for tag numbers of
  * the universal class.
@@ -363,9 +387,18 @@ struct cbb_buffer_st {
 	 * resized.
 	 */
 	char can_resize;
+
+	// TODO: nak3
+	//
+	// error is one if there was an error writing to this CBB. All future
+	// operations will fail.
+	unsigned error : 1;
+
 };
 
-typedef struct cbb_st {
+// TODO: nak3
+struct cbb_child_st {
+	// base is a pointer to the buffer this |CBB| writes to.
 	struct cbb_buffer_st *base;
 
 	/*
@@ -374,9 +407,6 @@ typedef struct cbb_st {
 	 */
 	size_t offset;
 
-	/* child points to a child CBB if a length-prefix is pending. */
-	struct cbb_st *child;
-
 	/*
 	 * pending_len_len contains the number of bytes in a pending length-prefix,
 	 * or zero if no length-prefix is pending.
@@ -384,12 +414,20 @@ typedef struct cbb_st {
 	uint8_t pending_len_len;
 
 	char pending_is_asn1;
+};
 
-	/*
-	 * is_top_level is true iff this is a top-level |CBB| (as opposed to a child
-	 * |CBB|). Top-level objects are valid arguments for |CBB_finish|.
-	 */
-	char is_top_level;
+// TODO: nak3
+typedef struct cbb_st {
+
+	/* child points to a child CBB if a length-prefix is pending. */
+	struct cbb_st *child;
+
+	char is_child;
+
+	union {
+		struct cbb_buffer_st base;
+		struct cbb_child_st child;
+	} u;
 } CBB;
 
 /*

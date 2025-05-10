@@ -29,30 +29,14 @@ void CBB_zero(CBB *cbb) { memset(cbb, 0, sizeof(CBB)); }
 static int
 cbb_init(CBB *cbb, uint8_t *buf, size_t cap, int can_resize)
 {
-
-
 	cbb->is_child = 0;
 	cbb->child = NULL;
 	cbb->u.base.buf = buf;
 	cbb->u.base.len = 0;
 	cbb->u.base.cap = cap;
 	cbb->u.base.can_resize = can_resize;
-	cbb->u.base.error = 0; // 任意
+	cbb->u.base.error = 0;
 
-#if 0
-	struct cbb_buffer_st *base;
-
-	if ((base = calloc(1, sizeof(struct cbb_buffer_st))) == NULL)
-		return 0;
-
-	base->buf = buf;
-	base->len = 0;
-	base->cap = cap;
-	base->can_resize = 1;
-
-	cbb->base = base;
-	cbb->is_top_level = 1;
-#endif
 	return 1;
 }
 
@@ -98,46 +82,65 @@ CBB_cleanup(CBB *cbb)
 	}
 
 	if (cbb->u.base.can_resize) {
-		// TODO: free
-//		OPENSSL_free(cbb->u.base.buf);
+		free(cbb->u.base.buf);
 	}
 }
+
+static int cbb_buffer_reserve(struct cbb_buffer_st *base, uint8_t **out,
+                              size_t len) {
+  if (base == NULL) {
+    return 0;
+  }
+
+  size_t newlen = base->len + len;
+  if (newlen < base->len) {
+    // Overflow
+//	  TODO
+//    OPENSSL_PUT_ERROR(CRYPTO, ERR_R_OVERFLOW);
+    goto err;
+  }
+
+  if (newlen > base->cap) {
+    if (!base->can_resize) {
+	    // TODO
+//      OPENSSL_PUT_ERROR(CRYPTO, ERR_R_OVERFLOW);
+      goto err;
+    }
+
+    size_t newcap = base->cap * 2;
+    if (newcap < base->cap || newcap < newlen) {
+      newcap = newlen;
+    }
+    uint8_t *newbuf = recallocarray(base->buf, base->cap, newcap, 1);
+
+    if (newbuf == NULL) {
+      goto err;
+    }
+
+    base->buf = newbuf;
+    base->cap = newcap;
+  }
+
+  if (out) {
+    *out = base->buf + base->len;
+  }
+
+  return 1;
+
+err:
+  base->error = 1;
+  return 0;
+}
+
 
 static int
 cbb_buffer_add(struct cbb_buffer_st *base, uint8_t **out, size_t len)
 {
-	size_t newlen;
-
-	if (base == NULL)
+	if (!cbb_buffer_reserve(base, out, len)) {
 		return 0;
-
-	newlen = base->len + len;
-	if (newlen < base->len)
-		/* Overflow */
-		return 0;
-
-	if (newlen > base->cap) {
-		size_t newcap = base->cap * 2;
-		uint8_t *newbuf;
-
-		if (!base->can_resize)
-			return 0;
-
-		if (newcap < base->cap || newcap < newlen)
-			newcap = newlen;
-
-		newbuf = recallocarray(base->buf, base->cap, newcap, 1);
-		if (newbuf == NULL)
-			return 0;
-
-		base->buf = newbuf;
-		base->cap = newcap;
 	}
-
-	if (out)
-		*out = base->buf + base->len;
-
-	base->len = newlen;
+	// This will not overflow or |cbb_buffer_reserve| would have failed.
+	base->len += len;
 	return 1;
 }
 
