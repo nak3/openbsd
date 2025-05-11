@@ -465,6 +465,7 @@ CBB_add_asn1(CBB *cbb, CBB *out_contents, unsigned int tag)
     return 0;
   }
 
+#if 0
   // Split the tag into leading bits and tag number.
   uint8_t tag_bits = (tag >> CBS_ASN1_TAG_SHIFT) & 0xe0;
   CBS_ASN1_TAG tag_number = tag & CBS_ASN1_TAG_NUMBER_MASK;
@@ -477,6 +478,18 @@ CBB_add_asn1(CBB *cbb, CBB *out_contents, unsigned int tag)
   } else if (!CBB_add_u8(cbb, tag_bits | tag_number)) {
     return 0;
   }
+#else
+    if (tag >= 0x1f) {
+    // Set all the bits in the tag number to signal high tag number form.
+    if (!CBB_add_u8(cbb, tag) ||
+        !add_base128_integer(cbb, tag)) {
+      return 0;
+    }
+  } else if (!CBB_add_u8(cbb, tag)) {
+    return 0;
+  }
+
+#endif
 
   // Reserve one byte of length prefix. |CBB_flush| will finish it later.
   return cbb_add_child(cbb, out_contents, /*len_len=*/1, /*is_asn1=*/1);

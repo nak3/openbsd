@@ -209,7 +209,7 @@ int CBS_peek_last_u8(CBS *cbs, uint8_t *out);
  * since tag number 31 is a reserved value to indicate multiple octets.
  */
 
-#if 0
+#if 1
 /* Bits 8 and 7: class tag type: See X.690 section 8.1.2.2. */
 #define CBS_ASN1_UNIVERSAL		0x00
 #define CBS_ASN1_APPLICATION		0x40
@@ -222,6 +222,7 @@ int CBS_peek_last_u8(CBS *cbs, uint8_t *out);
 
 #endif
 
+#if 0
 // TODO: nak3
 
 // CBS_ASN1_TAG_SHIFT is how much the in-memory representation shifts the class
@@ -246,7 +247,7 @@ int CBS_peek_last_u8(CBS *cbs, uint8_t *out);
 
 // CBS_ASN1_TAG_NUMBER_MASK may be ANDed with a tag to query its number.
 #define CBS_ASN1_TAG_NUMBER_MASK ((1u << (5 + CBS_ASN1_TAG_SHIFT)) - 1)
-
+#endif
 
 /*
  * Bits 5 to 1 are the tag number.  See X.680 section 8.6 for tag numbers of
@@ -266,7 +267,7 @@ int CBS_peek_last_u8(CBS *cbs, uint8_t *out);
  * In DER, bitstring and octetstring are required to be primitive
  * (X.690 section 10.2).
  */
-#if 0
+#if 1
 #define CBS_ASN1_BOOLEAN     (CBS_ASN1_UNIVERSAL | CBS_ASN1_PRIMITIVE | 0x1)
 #define CBS_ASN1_INTEGER     (CBS_ASN1_UNIVERSAL | CBS_ASN1_PRIMITIVE | 0x2)
 #define CBS_ASN1_BITSTRING   (CBS_ASN1_UNIVERSAL | CBS_ASN1_PRIMITIVE | 0x3)
@@ -277,6 +278,7 @@ int CBS_peek_last_u8(CBS *cbs, uint8_t *out);
 #define CBS_ASN1_SET         (CBS_ASN1_UNIVERSAL | CBS_ASN1_CONSTRUCTED | 0x11)
 #endif
 
+#if 0
 // The following values are constants for UNIVERSAL tags. Note these constants
 // include the constructed bit.
 #define CBS_ASN1_BOOLEAN 0x1u
@@ -301,7 +303,7 @@ int CBS_peek_last_u8(CBS *cbs, uint8_t *out);
 #define CBS_ASN1_GENERALSTRING 0x1bu
 #define CBS_ASN1_UNIVERSALSTRING 0x1cu
 #define CBS_ASN1_BMPSTRING 0x1eu
-
+#endif
 
 /*
  * CBS_get_asn1 sets |*out| to the contents of DER-encoded, ASN.1 element (not
