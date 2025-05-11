@@ -404,8 +404,15 @@ cbs_get_any_asn1_element_internal(CBS *cbs, CBS *out, unsigned int *out_tag,
 			if (strict)
 				return 0;
 
+fprintf(stderr, ">>> tag = 0x%02x (CONSTRUCTED? %s) [tag & 0x20 = 0x%02x]\n",
+    tag,
+    (tag & CBS_ASN1_CONSTRUCTED) ? "yes" : "no",
+    tag & CBS_ASN1_CONSTRUCTED);
+
 			/* Primitive cannot use indefinite in BER or DER. */
-			if ((tag & CBS_ASN1_CONSTRUCTED) == 0)
+// TODO: nak3
+	//		if ((tag & CBS_ASN1_CONSTRUCTED) == 0)
+			if ((tag & 0x20) == 0)
 				return 0;
 
 			/* Constructed, indefinite length allowed in BER. */

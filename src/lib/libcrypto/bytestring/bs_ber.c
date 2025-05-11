@@ -20,6 +20,9 @@
 
 #include "bytestring.h"
 
+// nak3
+#include <stdio.h>
+
 /*
  * kMaxDepth is a just a sanity limit. The code should be such that the length
  * of the input being processes always decreases. None the less, a very large
@@ -52,6 +55,8 @@ cbs_find_indefinite(const CBS *orig_in, char *indefinite_found,
 	if (depth > kMaxDepth)
 		return 0;
 
+			
+	printf("@@@ here5?\n");
 	CBS_init(&in, CBS_data(orig_in), CBS_len(orig_in));
 
 	while (CBS_len(&in) > 0) {
@@ -60,13 +65,16 @@ cbs_find_indefinite(const CBS *orig_in, char *indefinite_found,
 		size_t header_len;
 
 		if (!cbs_nonstrict_get_any_asn1_element(&in, &contents, &tag,
-		    &header_len))
+		    &header_len)) {
+			printf("@@@ here4?\n");
 			return 0;
+		}
 
 		/* Indefinite form not allowed by DER. */
 		if (CBS_len(&contents) == header_len && header_len > 0 &&
 		    CBS_data(&contents)[header_len - 1] == 0x80) {
 			*indefinite_found = 1;
+			printf("@@@ here2?\n");
 			return 1;
 		}
 		if (tag & CBS_ASN1_CONSTRUCTED) {
@@ -76,6 +84,8 @@ cbs_find_indefinite(const CBS *orig_in, char *indefinite_found,
 				return 0;
 		}
 	}
+			
+	printf("@@@ here3?\n");
 
 	*indefinite_found = 0;
 	return 1;
@@ -256,6 +266,7 @@ CBS_asn1_indefinite_to_definite(CBS *in, uint8_t **out, size_t *out_len)
 	if (!conversion_needed) {
 		*out = NULL;
 		*out_len = 0;
+		printf("@@@ here\n");
 		return 1;
 	}
 
