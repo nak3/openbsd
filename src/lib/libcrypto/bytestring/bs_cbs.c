@@ -464,14 +464,14 @@ cbs_get_asn1(CBS *cbs, CBS *out, unsigned int tag_value, int skip_header)
 	       	return 0;
 
 	}
+
+#if 0
 	fprintf(stderr, "@@@ compare tag: actual = 0x%02x, expected = 0x%02x\n",
 		      	tag, tag_value);
+#endif
 
 	uint8_t expected_tag = ((tag_value >> CBS_ASN1_TAG_SHIFT) & 0xe0) |
 	                       (tag_value & CBS_ASN1_TAG_NUMBER_MASK);
-
-	fprintf(stderr, "@@@ compare tag: actual = 0x%02x, expected = 0x%02x (from tag_value = 0x%08x)\n",
-	    tag, expected_tag, tag_value);
 
 	if (tag != expected_tag)
 		return 0;
@@ -501,6 +501,12 @@ CBS_peek_asn1_tag(const CBS *cbs, unsigned int tag_value)
 	if (CBS_len(cbs) < 1)
 		return 0;
 
+
+	uint8_t expected_tag =
+	    ((tag_value >> CBS_ASN1_TAG_SHIFT) & 0xe0) |
+	    (tag_value & CBS_ASN1_TAG_NUMBER_MASK);
+
+
 	/*
 	 * Tag number 31 indicates the start of a long form number.
 	 * This is valid in ASN.1, but CBS only supports short form.
@@ -508,7 +514,8 @@ CBS_peek_asn1_tag(const CBS *cbs, unsigned int tag_value)
 	if ((tag_value & 0x1f) == 0x1f)
 		return 0;
 
-	return CBS_data(cbs)[0] == tag_value;
+	//return CBS_data(cbs)[0] == tag_value;
+	return CBS_data(cbs)[0] == expected_tag;
 }
 
 /* Encoding details are in ASN.1: X.690 section 8.3 */
