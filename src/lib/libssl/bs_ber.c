@@ -55,8 +55,6 @@ cbs_find_indefinite(const CBS *orig_in, char *indefinite_found,
 	if (depth > kMaxDepth)
 		return 0;
 
-			
-	printf("@@@ here5?\n");
 	CBS_init(&in, CBS_data(orig_in), CBS_len(orig_in));
 
 	while (CBS_len(&in) > 0) {
@@ -66,7 +64,6 @@ cbs_find_indefinite(const CBS *orig_in, char *indefinite_found,
 
 		if (!cbs_nonstrict_get_any_asn1_element(&in, &contents, &tag,
 		    &header_len)) {
-			printf("@@@ here4?\n");
 			return 0;
 		}
 
@@ -74,7 +71,6 @@ cbs_find_indefinite(const CBS *orig_in, char *indefinite_found,
 		if (CBS_len(&contents) == header_len && header_len > 0 &&
 		    CBS_data(&contents)[header_len - 1] == 0x80) {
 			*indefinite_found = 1;
-			printf("@@@ here2?\n");
 			return 1;
 		}
 		if (tag & CBS_ASN1_CONSTRUCTED) {
@@ -84,8 +80,6 @@ cbs_find_indefinite(const CBS *orig_in, char *indefinite_found,
 				return 0;
 		}
 	}
-			
-	printf("@@@ here3?\n");
 
 	*indefinite_found = 0;
 	return 1;
@@ -97,6 +91,8 @@ cbs_find_indefinite(const CBS *orig_in, char *indefinite_found,
  * primitive tags can have the constructed bit if they have indefinite
  * length.
  */
+
+#if 0
 static char
 is_primitive_type(unsigned int tag)
 {
@@ -104,6 +100,45 @@ is_primitive_type(unsigned int tag)
 	    (tag & 0x1f) != (CBS_ASN1_SEQUENCE & 0x1f) &&
 	    (tag & 0x1f) != (CBS_ASN1_SET & 0x1f);
 }
+#endif
+
+#if 1
+static char
+is_primitive_type(unsigned int tag)
+{
+	// Must be UNIVERSAL
+	if ((tag & CBS_ASN1_CLASS_MASK) != CBS_ASN1_UNIVERSAL)
+		return 0;
+
+	// We only squash types that are required to be primitive in DER
+	unsigned int tag_number = tag & 0x1f;
+
+	switch (tag_number) {
+	case 0x03: // BIT STRING
+	case 0x04: // OCTET STRING
+		return 1;
+	default:
+		return 0;
+	}
+}
+// TODO
+#endif
+#if 0
+static char
+is_primitive_type(unsigned int tag)
+{
+	// UNIVERSALかつ constructedでない
+	if ((tag & CBS_ASN1_CLASS_MASK) != CBS_ASN1_UNIVERSAL)
+		return 0;
+
+	if (tag & CBS_ASN1_CONSTRUCTED)
+		return 0;
+
+	// タグ番号を確認
+	uint32_t tag_number = tag & 0x1f;
+	return tag_number != 0x10 && tag_number != 0x11;
+}
+#endif
 
 /*
  * is_eoc returns true if |header_len| and |contents|, as returned by
@@ -136,13 +171,35 @@ cbs_convert_indefinite(CBS *in, CBB *out, char squash_header,
 
 	while (CBS_len(in) > 0) {
 		CBS contents;
-		unsigned int tag;
+//		unsigned int tag;
+
+        unsigned int raw_tag;
+        unsigned int tag;
 		size_t header_len;
 		CBB *out_contents, out_contents_storage;
 
-		if (!cbs_nonstrict_get_any_asn1_element(in, &contents, &tag,
+fprintf(stderr, "[LOG] tag = 0x%08x\n", tag);
+fprintf(stderr, "[LOG] class = 0x%02x\n", (tag & CBS_ASN1_CLASS_MASK));
+fprintf(stderr, "[LOG] constructed? %s\n", (tag & CBS_ASN1_CONSTRUCTED) ? "yes" : "no");
+fprintf(stderr, "[LOG] tag_number = 0x%02x\n", (tag & 0x1f));
+
+//		if (!cbs_nonstrict_get_any_asn1_element(in, &contents, &tag,
+                if (!cbs_nonstrict_get_any_asn1_element(in, &contents, &raw_tag,
 		    &header_len))
 			return 0;
+
+// --- begin debug patch ---
+/* #if 0 */
+/* if ((tag & 0x1f) == 0x10) { */
+/*     fprintf(stderr, "[DEBUG] FORCING constructed bit on SEQUENCE\n"); */
+/*     tag |= CBS_ASN1_CONSTRUCTED; */
+/* } */
+/* #endif */
+// --- end debug patch ---
+
+
+	// Convert raw BER tag to internal tag with class/constructed
+	tag = ((raw_tag & 0xe0) << CBS_ASN1_TAG_SHIFT) | (raw_tag & 0x1f);
 
 		out_contents = out;
 
@@ -164,8 +221,14 @@ cbs_convert_indefinite(CBS *in, CBB *out, char squash_header,
 				 */
 				const char context_specific = (tag & 0xc0)
 				    == 0x80;
+
 				char squash_child_headers =
 				    is_primitive_type(tag);
+
+				fprintf(stderr, "[CHECK] tag = 0x%08x squash_child_headers = %d\n", tag, squash_child_headers);
+/* if ((tag & CBS_ASN1_TAG_NUMBER_MASK) == 0x10 ||  // SEQUENCE */
+/*     (tag & CBS_ASN1_TAG_NUMBER_MASK) == 0x11)    // SET */
+/*     squash_child_headers = 0; */
 
 				/*
 				 * This is a hack, but it sufficies to handle
@@ -253,7 +316,6 @@ int
 CBS_asn1_indefinite_to_definite(CBS *in, uint8_t **out, size_t *out_len)
 {
 	CBB cbb;
-
 	/*
 	 * First, do a quick walk to find any indefinite-length elements. Most
 	 * of the time we hope that there aren't any and thus we can quickly
@@ -266,12 +328,13 @@ CBS_asn1_indefinite_to_definite(CBS *in, uint8_t **out, size_t *out_len)
 	if (!conversion_needed) {
 		*out = NULL;
 		*out_len = 0;
-		printf("@@@ here\n");
 		return 1;
 	}
 
-	if (!CBB_init(&cbb, CBS_len(in)))
+	if (!CBB_init(&cbb, CBS_len(in))) {
 		return 0;
+	}
+
 	if (!cbs_convert_indefinite(in, &cbb, 0, 0, 0)) {
 		CBB_cleanup(&cbb);
 		return 0;

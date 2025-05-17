@@ -72,7 +72,7 @@ CBB_cleanup(CBB *cbb)
 {
 	// Child |CBB|s are non-owning. They are implicitly discarded and should not
 	// be used with |CBB_cleanup| or |ScopedCBB|.
-	//
+	// TODO
 //	assert(!cbb->is_child);
 	if (cbb->is_child) {
 		return;
@@ -115,9 +115,8 @@ static int cbb_buffer_reserve(struct cbb_buffer_st *base, uint8_t **out,
 		base->cap = newcap;
 	}
 
-	if (out) {
+	if (out)
 		*out = base->buf + base->len;
-	}
 
 	return 1;
 

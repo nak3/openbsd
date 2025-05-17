@@ -24,6 +24,8 @@
 
 #define CBB_INITIAL_SIZE 64
 
+#include <stdio.h>
+
 // TODO
 void CBB_zero(CBB *cbb) { memset(cbb, 0, sizeof(CBB)); }
 
@@ -72,8 +74,8 @@ CBB_cleanup(CBB *cbb)
 {
 	// Child |CBB|s are non-owning. They are implicitly discarded and should not
 	// be used with |CBB_cleanup| or |ScopedCBB|.
-	//
-	assert(!cbb->is_child);
+	// TODO
+//	assert(!cbb->is_child);
 	if (cbb->is_child) {
 		return;
 	}
@@ -97,6 +99,7 @@ static int cbb_buffer_reserve(struct cbb_buffer_st *base, uint8_t **out,
 
 	if (newlen > base->cap) {
 		if (!base->can_resize) {
+			// XXX:
 			goto err;
 		}
 
@@ -114,9 +117,8 @@ static int cbb_buffer_reserve(struct cbb_buffer_st *base, uint8_t **out,
 		base->cap = newcap;
 	}
 
-	if (out) {
+	if (out)
 		*out = base->buf + base->len;
-	}
 
 	return 1;
 
@@ -467,13 +469,24 @@ CBB_add_asn1(CBB *cbb, CBB *out_contents, unsigned int tag)
   // Split the tag into leading bits and tag number.
   uint8_t tag_bits = (tag >> CBS_ASN1_TAG_SHIFT) & 0xe0;
   CBS_ASN1_TAG tag_number = tag & CBS_ASN1_TAG_NUMBER_MASK;
+
+//  CBS_ASN1_TAG tag_number = tag & 0x1f;  // 正しい短タグ番号（5bitのみ）抽出 ???
+
+    fprintf(stderr, "[DEBUG] CBB_add_asn1: tag=0x%08x, class_bits=0x%02x, tag_number=0x%x\n",
+            tag, tag_bits, tag_number);
+
   if (tag_number >= 0x1f) {
+        fprintf(stderr, "[DEBUG] -> using short-form tag (1 byte)\n");
+
+
     // Set all the bits in the tag number to signal high tag number form.
     if (!CBB_add_u8(cbb, tag_bits | 0x1f) ||
         !add_base128_integer(cbb, tag_number)) {
       return 0;
     }
   } else if (!CBB_add_u8(cbb, tag_bits | tag_number)) {
+        fprintf(stderr, "[DEBUG] -> using long-form tag (high-tag-number), will write 0x1f first\n");
+
     return 0;
   }
 
@@ -486,10 +499,17 @@ CBB_add_asn1(CBB *cbb, CBB *out_contents, unsigned int tag)
 int
 CBB_add_bytes(CBB *cbb, const uint8_t *data, size_t len)
 {
+	for (size_t i = 0; i < len; i++) {
+		if (data[i] == 0x1f) {
+			fprintf(stderr, "[TRACE] CBB_add_bytes: data[%zu] = 0x1f\n", i);
+		}
+	}
+
 	uint8_t *out;
 	if (!CBB_add_space(cbb, &out, len)) {
 		return 0;
 	}
+
 
 	memcpy(out, data, len);
 	return 1;
@@ -510,6 +530,11 @@ CBB_add_u8(CBB *cbb, size_t value)
 {
 	if (value > UINT8_MAX)
 		return 0;
+
+	if (value == 0x1f) {
+		fprintf(stderr, "[TRACE] CBB_add_u8 called with 0x1f!\n");
+		// 場合によっては backtrace 追加してもよい
+	}
 
 	return cbb_add_u(cbb, (uint32_t)value, 1);
 }

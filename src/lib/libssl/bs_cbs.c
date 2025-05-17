@@ -366,6 +366,7 @@ cbs_get_any_asn1_element_internal(CBS *cbs, CBS *out, unsigned int *out_tag,
 	CBS throwaway;
 	size_t len;
 
+
 	if (out == NULL)
 		out = &throwaway;
 
@@ -376,12 +377,18 @@ cbs_get_any_asn1_element_internal(CBS *cbs, CBS *out, unsigned int *out_tag,
 	if (!CBS_get_u8(&header, &tag) || !CBS_get_u8(&header, &length_byte))
 		return 0;
 
+	fprintf(stderr, "[MARK] in cbs_get_any_asn1_element_internal, raw tag=0x%02x\n", tag);
+
 	/* CBS limitation: long form tags are not supported. */
 	if ((tag & 0x1f) == 0x1f)
 		return 0;
 
 	if (out_tag != NULL)
 		*out_tag = tag;
+//		*out_tag = ((tag & 0xe0) << CBS_ASN1_TAG_SHIFT) | (tag & 0x1f);
+	// TODO
+
+
 
 	if ((length_byte & 0x80) == 0) {
 		/* Short form length. */
@@ -403,11 +410,6 @@ cbs_get_any_asn1_element_internal(CBS *cbs, CBS *out, unsigned int *out_tag,
 			/* DER encoding doesn't allow for indefinite form. */
 			if (strict)
 				return 0;
-
-fprintf(stderr, ">>> tag = 0x%02x (CONSTRUCTED? %s) [tag & 0x20 = 0x%02x]\n",
-    tag,
-    (tag & CBS_ASN1_CONSTRUCTED) ? "yes" : "no",
-    tag & CBS_ASN1_CONSTRUCTED);
 
 			/* Primitive cannot use indefinite in BER or DER. */
 // TODO: nak3
@@ -467,15 +469,9 @@ cbs_get_asn1(CBS *cbs, CBS *out, unsigned int tag_value, int skip_header)
 		return 0;
 #else
 	if (!CBS_get_any_asn1_element(cbs, out, &tag, &header_len)) {
-		fprintf(stderr, "@@@ CBS_get_any_asn1_element failed\n");
 	       	return 0;
 
 	}
-
-#if 0
-	fprintf(stderr, "@@@ compare tag: actual = 0x%02x, expected = 0x%02x\n",
-		      	tag, tag_value);
-#endif
 
 	uint8_t expected_tag = ((tag_value >> CBS_ASN1_TAG_SHIFT) & 0xe0) |
 	                       (tag_value & CBS_ASN1_TAG_NUMBER_MASK);
@@ -486,7 +482,7 @@ cbs_get_asn1(CBS *cbs, CBS *out, unsigned int tag_value, int skip_header)
 
 	if (skip_header && !CBS_skip(out, header_len))
 		return 0;
-	
+
 	return 1;
 }
 
@@ -568,13 +564,11 @@ int
 CBS_get_optional_asn1(CBS *cbs, CBS *out, int *out_present, unsigned int tag)
 {
 	if (CBS_peek_asn1_tag(cbs, tag)) {
-		fprintf(stderr, "@@@ tag matched for optional tag: 0x%08x\n", tag);
 		if (!CBS_get_asn1(cbs, out, tag))
 			return 0;
 
 		*out_present = 1;
 	} else {
-		fprintf(stderr, "@@@ optional tag 0x%08x not present\n", tag);
 		*out_present = 0;
 	}
 	return 1;

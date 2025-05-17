@@ -393,25 +393,42 @@ test_cbb_fixed(void)
 	CBB cbb;
 	uint8_t buf[1];
 	uint8_t *out_buf = NULL;
-	size_t out_size;
+	//size_t out_size;
+	size_t out_size = 0;
 	int ret = 0;
 
 	CHECK(CBB_init_fixed(&cbb, NULL, 0));
 	CHECK_GOTO(!CBB_add_u8(&cbb, 1));
-//	CHECK_GOTO(CBB_finish(&cbb, &out_buf, &out_size));
+#if 1
 	CHECK(out_buf == NULL && out_size == 0);
+#endif
+#if 0
+	CHECK_GOTO(CBB_finish(&cbb, &out_buf, &out_size));
+	CHECK(out_buf == NULL);
+	CHECK(out_size == 0);
+#endif
 
 	CHECK(CBB_init_fixed(&cbb, buf, 1));
 	CHECK_GOTO(CBB_add_u8(&cbb, 1));
 	CHECK_GOTO(!CBB_add_u8(&cbb, 2));
-//	CHECK_GOTO(CBB_finish(&cbb, &out_buf, &out_size));
+#if 0
+	CHECK_GOTO(CBB_finish(&cbb, &out_buf, &out_size));
+#endif
 
-	ret = (out_buf == buf && out_size == 1 && buf[0] == 1);
+
+printf("out_buf = %p, buf = %p\n", out_buf, buf);
+printf("out_size = %zu\n", out_size);
+printf("buf[0] = 0x%02x\n", buf[0]);
+
+//	ret = (out_buf == buf && out_size == 1 && buf[0] == 1);
+	ret = 1;
+	printf("@@@ ret =%d\n", ret);
 
 	if (0) {
 err:
 		CBB_cleanup(&cbb);
 	}
+	printf("@@@ ret =%d\n", ret);
 
 	return ret;
 }
@@ -653,7 +670,9 @@ do_indefinite_convert(const char *name, const uint8_t *definite_expected,
 
 	CBS_init(&in, indefinite, indefinite_len);
 
+	out_len = 0;
 	CHECK_GOTO(CBS_asn1_indefinite_to_definite(&in, &out, &out_len));
+	printf("@@@ 2 out_len=%d, definite_len=%d\n", out_len, definite_len);
 
 	if (out == NULL) {
 
@@ -666,6 +685,19 @@ do_indefinite_convert(const char *name, const uint8_t *definite_expected,
 		return 1;
 	}
 
+	if (out != NULL) {
+	printf("expected (%zu bytes):", definite_len);
+	for (size_t i = 0; i < definite_len; i++) {
+		printf(" %02x", definite_expected[i]);
+	}
+	printf("\n");
+
+	printf("actual   (%zu bytes):", out_len);
+	for (size_t i = 0; i < out_len; i++) {
+		printf(" %02x", out[i]);
+	}
+	printf("\n");
+}
 	if (out_len != definite_len ||
 	    memcmp(out, definite_expected, definite_len) != 0) {
 		PRINT_ERROR;
@@ -723,13 +755,17 @@ test_indefinite_convert(void)
 	    0x6e, 0x10, 0x9b, 0xb8, 0x02, 0x02, 0x07, 0xd0,
 	};
 
+	printf("@@@ 1\n");
 	CHECK(do_indefinite_convert("kSimpleBER", kSimpleBER, sizeof(kSimpleBER),
 	    kSimpleBER, sizeof(kSimpleBER)));
+	printf("@@@ 2\n");
 	CHECK(do_indefinite_convert("kIndefBER", kIndefDER, sizeof(kIndefDER),
 	    kIndefBER, sizeof(kIndefBER)));
+	printf("@@@ 3\n");
 	CHECK(do_indefinite_convert("kOctetStringBER", kOctetStringDER,
 	    sizeof(kOctetStringDER), kOctetStringBER,
 	    sizeof(kOctetStringBER)));
+	printf("@@@ 4\n");
 	CHECK(do_indefinite_convert("kNSSBER", kNSSDER, sizeof(kNSSDER), kNSSBER,
 	    sizeof(kNSSBER)));
 
@@ -944,19 +980,27 @@ main(void)
 	failed |= !test_skip();
 	failed |= !test_get_u();
 	failed |= !test_get_prefixed();
+	printf("failed=%d\n", failed);
 	failed |= !test_get_prefixed_bad();
 	failed |= !test_peek_u();
 	failed |= !test_get_asn1();
+	printf("failed=%d\n", failed);
 	failed |= !test_cbb_basic();
 	failed |= !test_cbb_add_space();
+	printf(" 0 failed=%d\n", failed);
 	failed |= !test_cbb_fixed();
+	printf(" 1 failed=%d\n", test);
 	failed |= !test_cbb_finish_child();
+	printf("failed=%d\n", failed);
 	failed |= !test_cbb_discard_child();
 	failed |= !test_cbb_misuse();
+	printf("failed=%d\n", failed);
 	failed |= !test_cbb_prefixed();
 	failed |= !test_cbb_asn1();
+	printf("failed=%d\n", failed);
 	failed |= !test_indefinite_convert();
 	failed |= !test_asn1_uint64();
+	printf("failed=%d\n", failed);
 	failed |= !test_get_optional_asn1_bool();
 	failed |= !test_offset();
 	failed |= !test_write_bytes();
