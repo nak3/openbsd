@@ -60,9 +60,8 @@ cbs_find_indefinite(const CBS *orig_in, char *indefinite_found,
 		size_t header_len;
 
 		if (!cbs_nonstrict_get_any_asn1_element(&in, &contents, &tag,
-		    &header_len)) {
+		    &header_len))
 			return 0;
-		}
 
 		/* Indefinite form not allowed by DER. */
 		if (CBS_len(&contents) == header_len && header_len > 0 &&
@@ -290,7 +289,6 @@ CBS_asn1_indefinite_to_definite(CBS *in, uint8_t **out, size_t *out_len)
 
 	if (!CBB_init(&cbb, CBS_len(in)))
 		return 0;
-
 	if (!cbs_convert_indefinite(in, &cbb, 0, 0, 0)) {
 		CBB_cleanup(&cbb);
 		return 0;

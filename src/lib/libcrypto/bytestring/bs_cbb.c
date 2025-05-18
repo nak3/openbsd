@@ -289,10 +289,6 @@ CBB_flush(CBB *cbb)
 	child->base = NULL;
 	cbb->child = NULL;
 
-	/* cbb->pending_len_len = 0; */
-	/* cbb->pending_is_asn1 = 0; */
-	/* cbb->offset = 0; */
-
 	return 1;
  err:
 	cbb_on_error(cbb);

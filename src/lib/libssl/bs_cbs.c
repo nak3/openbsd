@@ -345,7 +345,6 @@ CBS_get_any_asn1_element(CBS *cbs, CBS *out, unsigned int *out_tag,
 	    out_header_len, 1);
 }
 
-
 /*
  * Review X.690 for details on ASN.1 DER encoding.
  *
@@ -363,7 +362,6 @@ cbs_get_any_asn1_element_internal(CBS *cbs, CBS *out, unsigned int *out_tag,
 	CBS header = *cbs;
 	CBS throwaway;
 	size_t len;
-
 
 	if (out == NULL)
 		out = &throwaway;
@@ -405,7 +403,7 @@ cbs_get_any_asn1_element_internal(CBS *cbs, CBS *out, unsigned int *out_tag,
 
 			/* Primitive cannot use indefinite in BER or DER. */
 // TODO: nak3
-	//		if ((tag & CBS_ASN1_CONSTRUCTED) == 0)
+//			if ((tag & CBS_ASN1_CONSTRUCTED) == 0)
 			if ((tag & 0x20) == 0)
 				return 0;
 
