@@ -176,26 +176,26 @@ static struct cbb_buffer_st *cbb_get_base(CBB *cbb) {
 
 // TODO
 static void cbb_on_error(CBB *cbb) {
-  // Due to C's lack of destructors and |CBB|'s auto-flushing API, a failing
-  // |CBB|-taking function may leave a dangling pointer to a child |CBB|. As a
-  // result, the convention is callers may not write to |CBB|s that have failed.
-  // But, as a safety measure, we lock the |CBB| into an error state. Once the
-  // error bit is set, |cbb->child| will not be read.
-  //
-  // TODO(davidben): This still isn't quite ideal. A |CBB| function *outside*
-  // this file may originate an error while the |CBB| points to a local child.
-  // In that case we don't set the error bit and are reliant on the error
-  // convention. Perhaps we allow |CBB_cleanup| on child |CBB|s and make every
-  // child's |CBB_cleanup| set the error bit if unflushed. That will be
-  // convenient for C++ callers, but very tedious for C callers. So C callers
-  // perhaps should get a |CBB_on_error| function that can be, less tediously,
-  // stuck in a |goto err| block.
-  cbb_get_base(cbb)->error = 1;
+	// Due to C's lack of destructors and |CBB|'s auto-flushing API, a failing
+	// |CBB|-taking function may leave a dangling pointer to a child |CBB|. As a
+	// result, the convention is callers may not write to |CBB|s that have failed.
+	// But, as a safety measure, we lock the |CBB| into an error state. Once the
+	// error bit is set, |cbb->child| will not be read.
+	//
+	// TODO(davidben): This still isn't quite ideal. A |CBB| function *outside*
+	// this file may originate an error while the |CBB| points to a local child.
+	// In that case we don't set the error bit and are reliant on the error
+	// convention. Perhaps we allow |CBB_cleanup| on child |CBB|s and make every
+	// child's |CBB_cleanup| set the error bit if unflushed. That will be
+	// convenient for C++ callers, but very tedious for C callers. So C callers
+	// perhaps should get a |CBB_on_error| function that can be, less tediously,
+	// stuck in a |goto err| block.
+	cbb_get_base(cbb)->error = 1;
 
-  // Clearing the pointer is not strictly necessary, but GCC's dangling pointer
-  // warning does not know |cbb->child| will not be read once |error| is set
-  // above.
-  cbb->child = NULL;
+	// Clearing the pointer is not strictly necessary, but GCC's dangling pointer
+	// warning does not know |cbb->child| will not be read once |error| is set
+	// above.
+	cbb->child = NULL;
 }
 
 

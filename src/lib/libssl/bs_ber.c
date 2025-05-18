@@ -20,9 +20,6 @@
 
 #include "bytestring.h"
 
-// nak3
-#include <stdio.h>
-
 /*
  * kMaxDepth is a just a sanity limit. The code should be such that the length
  * of the input being processes always decreases. None the less, a very large
@@ -102,7 +99,7 @@ is_primitive_type(unsigned int tag)
 }
 #endif
 
-#if 1
+// TODO
 static char
 is_primitive_type(unsigned int tag)
 {
@@ -121,24 +118,6 @@ is_primitive_type(unsigned int tag)
 		return 0;
 	}
 }
-// TODO
-#endif
-#if 0
-static char
-is_primitive_type(unsigned int tag)
-{
-	// UNIVERSALかつ constructedでない
-	if ((tag & CBS_ASN1_CLASS_MASK) != CBS_ASN1_UNIVERSAL)
-		return 0;
-
-	if (tag & CBS_ASN1_CONSTRUCTED)
-		return 0;
-
-	// タグ番号を確認
-	uint32_t tag_number = tag & 0x1f;
-	return tag_number != 0x10 && tag_number != 0x11;
-}
-#endif
 
 /*
  * is_eoc returns true if |header_len| and |contents|, as returned by
@@ -171,35 +150,18 @@ cbs_convert_indefinite(CBS *in, CBB *out, char squash_header,
 
 	while (CBS_len(in) > 0) {
 		CBS contents;
-//		unsigned int tag;
 
-        unsigned int raw_tag;
-        unsigned int tag;
+		unsigned int raw_tag;
+		unsigned int tag;
 		size_t header_len;
 		CBB *out_contents, out_contents_storage;
 
-fprintf(stderr, "[LOG] tag = 0x%08x\n", tag);
-fprintf(stderr, "[LOG] class = 0x%02x\n", (tag & CBS_ASN1_CLASS_MASK));
-fprintf(stderr, "[LOG] constructed? %s\n", (tag & CBS_ASN1_CONSTRUCTED) ? "yes" : "no");
-fprintf(stderr, "[LOG] tag_number = 0x%02x\n", (tag & 0x1f));
-
-//		if (!cbs_nonstrict_get_any_asn1_element(in, &contents, &tag,
                 if (!cbs_nonstrict_get_any_asn1_element(in, &contents, &raw_tag,
 		    &header_len))
 			return 0;
 
-// --- begin debug patch ---
-/* #if 0 */
-/* if ((tag & 0x1f) == 0x10) { */
-/*     fprintf(stderr, "[DEBUG] FORCING constructed bit on SEQUENCE\n"); */
-/*     tag |= CBS_ASN1_CONSTRUCTED; */
-/* } */
-/* #endif */
-// --- end debug patch ---
-
-
-	// Convert raw BER tag to internal tag with class/constructed
-	tag = ((raw_tag & 0xe0) << CBS_ASN1_TAG_SHIFT) | (raw_tag & 0x1f);
+		// Convert raw BER tag to internal tag with class/constructed
+		tag = ((raw_tag & 0xe0) << CBS_ASN1_TAG_SHIFT) | (raw_tag & 0x1f);
 
 		out_contents = out;
 
@@ -224,11 +186,6 @@ fprintf(stderr, "[LOG] tag_number = 0x%02x\n", (tag & 0x1f));
 
 				char squash_child_headers =
 				    is_primitive_type(tag);
-
-				fprintf(stderr, "[CHECK] tag = 0x%08x squash_child_headers = %d\n", tag, squash_child_headers);
-/* if ((tag & CBS_ASN1_TAG_NUMBER_MASK) == 0x10 ||  // SEQUENCE */
-/*     (tag & CBS_ASN1_TAG_NUMBER_MASK) == 0x11)    // SET */
-/*     squash_child_headers = 0; */
 
 				/*
 				 * This is a hack, but it sufficies to handle
