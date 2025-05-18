@@ -21,8 +21,6 @@
 
 #include "bytestring.h"
 
-#include <stdio.h>
-
 void
 CBS_init(CBS *cbs, const uint8_t *data, size_t len)
 {
@@ -456,12 +454,6 @@ cbs_get_asn1(CBS *cbs, CBS *out, unsigned int tag_value, int skip_header)
 	if (out == NULL)
 		out = &throwaway;
 
-#if 0
-	printf("@@@ hoge0 tag = %d\n");
-	if (!CBS_get_any_asn1_element(cbs, out, &tag, &header_len) ||
-	    tag != tag_value)
-		return 0;
-#else
 	if (!CBS_get_any_asn1_element(cbs, out, &tag, &header_len)) {
 	       	return 0;
 
@@ -472,7 +464,6 @@ cbs_get_asn1(CBS *cbs, CBS *out, unsigned int tag_value, int skip_header)
 
 	if (tag != expected_tag)
 		return 0;
-#endif
 
 	if (skip_header && !CBS_skip(out, header_len))
 		return 0;
