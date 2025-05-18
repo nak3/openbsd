@@ -29,7 +29,7 @@
 // TODO
 void CBB_zero(CBB *cbb) { memset(cbb, 0, sizeof(CBB)); }
 
-static int
+static void
 cbb_init(CBB *cbb, uint8_t *buf, size_t cap, int can_resize)
 {
 	cbb->is_child = 0;
@@ -39,8 +39,6 @@ cbb_init(CBB *cbb, uint8_t *buf, size_t cap, int can_resize)
 	cbb->u.base.cap = cap;
 	cbb->u.base.can_resize = can_resize;
 	cbb->u.base.error = 0;
-
-	return 1;
 }
 
 int
