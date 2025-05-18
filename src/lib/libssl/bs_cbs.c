@@ -377,18 +377,12 @@ cbs_get_any_asn1_element_internal(CBS *cbs, CBS *out, unsigned int *out_tag,
 	if (!CBS_get_u8(&header, &tag) || !CBS_get_u8(&header, &length_byte))
 		return 0;
 
-	fprintf(stderr, "[MARK] in cbs_get_any_asn1_element_internal, raw tag=0x%02x\n", tag);
-
 	/* CBS limitation: long form tags are not supported. */
 	if ((tag & 0x1f) == 0x1f)
 		return 0;
 
 	if (out_tag != NULL)
 		*out_tag = tag;
-//		*out_tag = ((tag & 0xe0) << CBS_ASN1_TAG_SHIFT) | (tag & 0x1f);
-	// TODO
-
-
 
 	if ((length_byte & 0x80) == 0) {
 		/* Short form length. */

@@ -199,7 +199,6 @@ static void cbb_on_error(CBB *cbb) {
 }
 
 
-
 /*
  * CBB_flush recurses and then writes out any pending length prefix. The current
  * length of the underlying base is taken to be the length of the
@@ -329,8 +328,7 @@ CBB_discard_child(CBB *cbb)
 		return;
 
 	struct cbb_buffer_st *base = cbb_get_base(cbb);
-	// TODO: nak3
-//	assert(cbb->child->is_child);
+	assert(cbb->child->is_child);
 	base->len = cbb->child->u.child.offset;
 
 	cbb->child->u.child.base = NULL;
@@ -339,29 +337,27 @@ CBB_discard_child(CBB *cbb)
 
 static int cbb_add_child(CBB *cbb, CBB *out_child, uint8_t len_len,
                          int is_asn1) {
-  /* assert(cbb->child == NULL); */
-  /* assert(!is_asn1 || len_len == 1); */
-  struct cbb_buffer_st *base = cbb_get_base(cbb);
-  size_t offset = base->len;
+	assert(cbb->child == NULL);
+	assert(!is_asn1 || len_len == 1);
+	struct cbb_buffer_st *base = cbb_get_base(cbb);
+	size_t offset = base->len;
 
-  // Reserve space for the length prefix.
-  uint8_t *prefix_bytes;
-  if (!cbb_buffer_add(base, &prefix_bytes, len_len)) {
-    return 0;
-  }
+	// Reserve space for the length prefix.
+	uint8_t *prefix_bytes;
+	if (!cbb_buffer_add(base, &prefix_bytes, len_len)) {
+		return 0;
+	}
 
-  // TODO
-  //OPENSSL_memset(prefix_bytes, 0, len_len);
-  memset(prefix_bytes, 0, len_len);
+	memset(prefix_bytes, 0, len_len);
 
-  CBB_zero(out_child);
-  out_child->is_child = 1;
-  out_child->u.child.base = base;
-  out_child->u.child.offset = offset;
-  out_child->u.child.pending_len_len = len_len;
-  out_child->u.child.pending_is_asn1 = is_asn1;
-  cbb->child = out_child;
-  return 1;
+	CBB_zero(out_child);
+	out_child->is_child = 1;
+	out_child->u.child.base = base;
+	out_child->u.child.offset = offset;
+	out_child->u.child.pending_len_len = len_len;
+	out_child->u.child.pending_is_asn1 = is_asn1;
+	cbb->child = out_child;
+	return 1;
 }
 
 
@@ -403,28 +399,27 @@ CBB_add_u32_length_prefixed(CBB *cbb, CBB *out_contents)
 // high bit of each byte indicates where there is more data. This is the
 // encoding used in DER for both high tag number form and OID components.
 static int add_base128_integer(CBB *cbb, uint64_t v) {
-  unsigned len_len = 0;
-  uint64_t copy = v;
-  while (copy > 0) {
-    len_len++;
-    copy >>= 7;
-  }
-  if (len_len == 0) {
-    len_len = 1;  // Zero is encoded with one byte.
-  }
-  for (unsigned i = len_len - 1; i < len_len; i--) {
-    uint8_t byte = (v >> (7 * i)) & 0x7f;
-    if (i != 0) {
-      // The high bit denotes whether there is more data.
-      byte |= 0x80;
-    }
-    if (!CBB_add_u8(cbb, byte)) {
-      return 0;
-    }
-  }
-  return 1;
+	unsigned len_len = 0;
+	uint64_t copy = v;
+	while (copy > 0) {
+		len_len++;
+		copy >>= 7;
+	}
+	if (len_len == 0) {
+		len_len = 1;  // Zero is encoded with one byte.
+	}
+	for (unsigned i = len_len - 1; i < len_len; i--) {
+		uint8_t byte = (v >> (7 * i)) & 0x7f;
+		if (i != 0) {
+			// The high bit denotes whether there is more data.
+			byte |= 0x80;
+		}
+		if (!CBB_add_u8(cbb, byte)) {
+			return 0;
+		}
+	}
+	return 1;
 }
-
 
 // TODO: nak3 move to base.h
 
@@ -432,84 +427,42 @@ static int add_base128_integer(CBB *cbb, uint64_t v) {
 // header for details. This type is defined in base.h as a forward declaration.
 typedef uint32_t CBS_ASN1_TAG;
 
-
-
 int
 CBB_add_asn1(CBB *cbb, CBB *out_contents, unsigned int tag)
 {
-	/* if (tag > UINT8_MAX) */
-	/* 	return 0; */
+	if (!CBB_flush(cbb)) {
+		return 0;
+	}
 
-	/* /\* Long form identifier octets are not supported. *\/ */
-	/* if ((tag & 0x1f) == 0x1f) */
-	/* 	return 0; */
+	// Split the tag into leading bits and tag number.
+	uint8_t tag_bits = (tag >> CBS_ASN1_TAG_SHIFT) & 0xe0;
+	CBS_ASN1_TAG tag_number = tag & CBS_ASN1_TAG_NUMBER_MASK;
 
-	/* /\* Short-form identifier octet only needs a single byte *\/ */
-	/* if (!CBB_flush(cbb) || !CBB_add_u8(cbb, tag)) */
-	/* 	return 0; */
+	if (tag_number >= 0x1f) {
+		fprintf(stderr, "[DEBUG] -> using short-form tag (1 byte)\n");
 
-	/* /\* */
-	/*  * Add 1 byte to cover the short-form length octet case.  If it turns */
-	/*  * out we need long-form, it will be extended later. */
-	/*  *\/ */
-	/* cbb->offset = cbb->base->len; */
-	/* if (!CBB_add_u8(cbb, 0)) */
-	/* 	return 0; */
+		// Set all the bits in the tag number to signal high tag number form.
+		if (!CBB_add_u8(cbb, tag_bits | 0x1f) ||
+		    !add_base128_integer(cbb, tag_number)) {
+			return 0;
+		}
+	} else if (!CBB_add_u8(cbb, tag_bits | tag_number)) {
+		fprintf(stderr, "[DEBUG] -> using long-form tag (high-tag-number), will write 0x1f first\n");
 
-	/* memset(out_contents, 0, sizeof(CBB)); */
-	/* out_contents->base = cbb->base; */
-	/* cbb->child = out_contents; */
-	/* cbb->pending_len_len = 1; */
-	/* cbb->pending_is_asn1 = 1; */
+		return 0;
+	}
 
-  if (!CBB_flush(cbb)) {
-    return 0;
-  }
-
-  // Split the tag into leading bits and tag number.
-  uint8_t tag_bits = (tag >> CBS_ASN1_TAG_SHIFT) & 0xe0;
-  CBS_ASN1_TAG tag_number = tag & CBS_ASN1_TAG_NUMBER_MASK;
-
-//  CBS_ASN1_TAG tag_number = tag & 0x1f;  // 正しい短タグ番号（5bitのみ）抽出 ???
-
-    fprintf(stderr, "[DEBUG] CBB_add_asn1: tag=0x%08x, class_bits=0x%02x, tag_number=0x%x\n",
-            tag, tag_bits, tag_number);
-
-  if (tag_number >= 0x1f) {
-        fprintf(stderr, "[DEBUG] -> using short-form tag (1 byte)\n");
-
-
-    // Set all the bits in the tag number to signal high tag number form.
-    if (!CBB_add_u8(cbb, tag_bits | 0x1f) ||
-        !add_base128_integer(cbb, tag_number)) {
-      return 0;
-    }
-  } else if (!CBB_add_u8(cbb, tag_bits | tag_number)) {
-        fprintf(stderr, "[DEBUG] -> using long-form tag (high-tag-number), will write 0x1f first\n");
-
-    return 0;
-  }
-
-  // Reserve one byte of length prefix. |CBB_flush| will finish it later.
-  return cbb_add_child(cbb, out_contents, /*len_len=*/1, /*is_asn1=*/1);
-
-	return 1;
+	// Reserve one byte of length prefix. |CBB_flush| will finish it later.
+	return cbb_add_child(cbb, out_contents, /*len_len=*/1, /*is_asn1=*/1);
 }
 
 int
 CBB_add_bytes(CBB *cbb, const uint8_t *data, size_t len)
 {
-	for (size_t i = 0; i < len; i++) {
-		if (data[i] == 0x1f) {
-			fprintf(stderr, "[TRACE] CBB_add_bytes: data[%zu] = 0x1f\n", i);
-		}
-	}
-
 	uint8_t *out;
 	if (!CBB_add_space(cbb, &out, len)) {
 		return 0;
 	}
-
 
 	memcpy(out, data, len);
 	return 1;
@@ -530,11 +483,6 @@ CBB_add_u8(CBB *cbb, size_t value)
 {
 	if (value > UINT8_MAX)
 		return 0;
-
-	if (value == 0x1f) {
-		fprintf(stderr, "[TRACE] CBB_add_u8 called with 0x1f!\n");
-		// 場合によっては backtrace 追加してもよい
-	}
 
 	return cbb_add_u(cbb, (uint32_t)value, 1);
 }
