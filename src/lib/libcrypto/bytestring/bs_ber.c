@@ -183,7 +183,6 @@ cbs_convert_indefinite(CBS *in, CBB *out, char squash_header,
 				 */
 				const char context_specific = (tag & 0xc0)
 				    == 0x80;
-
 				char squash_child_headers =
 				    is_primitive_type(tag);
 
@@ -273,6 +272,7 @@ int
 CBS_asn1_indefinite_to_definite(CBS *in, uint8_t **out, size_t *out_len)
 {
 	CBB cbb;
+
 	/*
 	 * First, do a quick walk to find any indefinite-length elements. Most
 	 * of the time we hope that there aren't any and thus we can quickly
@@ -288,9 +288,8 @@ CBS_asn1_indefinite_to_definite(CBS *in, uint8_t **out, size_t *out_len)
 		return 1;
 	}
 
-	if (!CBB_init(&cbb, CBS_len(in))) {
+	if (!CBB_init(&cbb, CBS_len(in)))
 		return 0;
-	}
 
 	if (!cbs_convert_indefinite(in, &cbb, 0, 0, 0)) {
 		CBB_cleanup(&cbb);
