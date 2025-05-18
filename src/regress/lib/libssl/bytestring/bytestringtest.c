@@ -415,20 +415,13 @@ test_cbb_fixed(void)
 	CHECK_GOTO(CBB_finish(&cbb, &out_buf, &out_size));
 #endif
 
-
-printf("out_buf = %p, buf = %p\n", out_buf, buf);
-printf("out_size = %zu\n", out_size);
-printf("buf[0] = 0x%02x\n", buf[0]);
-
 //	ret = (out_buf == buf && out_size == 1 && buf[0] == 1);
 	ret = 1;
-	printf("@@@ ret =%d\n", ret);
 
 	if (0) {
 err:
 		CBB_cleanup(&cbb);
 	}
-	printf("@@@ ret =%d\n", ret);
 
 	return ret;
 }
