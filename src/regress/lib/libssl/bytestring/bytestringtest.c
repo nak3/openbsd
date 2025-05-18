@@ -755,17 +755,13 @@ test_indefinite_convert(void)
 	    0x6e, 0x10, 0x9b, 0xb8, 0x02, 0x02, 0x07, 0xd0,
 	};
 
-	printf("@@@ 1\n");
 	CHECK(do_indefinite_convert("kSimpleBER", kSimpleBER, sizeof(kSimpleBER),
 	    kSimpleBER, sizeof(kSimpleBER)));
-	printf("@@@ 2\n");
 	CHECK(do_indefinite_convert("kIndefBER", kIndefDER, sizeof(kIndefDER),
 	    kIndefBER, sizeof(kIndefBER)));
-	printf("@@@ 3\n");
 	CHECK(do_indefinite_convert("kOctetStringBER", kOctetStringDER,
 	    sizeof(kOctetStringDER), kOctetStringBER,
 	    sizeof(kOctetStringBER)));
-	printf("@@@ 4\n");
 	CHECK(do_indefinite_convert("kNSSBER", kNSSDER, sizeof(kNSSDER), kNSSBER,
 	    sizeof(kNSSBER)));
 
