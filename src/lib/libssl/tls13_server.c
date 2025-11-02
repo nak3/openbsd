@@ -502,7 +502,7 @@ tls13_server_hello_send(struct tls13_ctx *ctx, CBB *cbb)
 {
 	if (ctx->hs->key_share == NULL)
 		return 0;
-	if (!tls_key_share_generate(ctx->hs->key_share))
+	if (!tls_key_share_generate_server(ctx->hs->key_share))
 		return 0;
 	if (!tls13_servername_process(ctx))
 		return 0;

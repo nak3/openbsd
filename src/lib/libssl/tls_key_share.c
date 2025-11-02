@@ -21,6 +21,7 @@
 #include <openssl/dh.h>
 #include <openssl/ec.h>
 #include <openssl/evp.h>
+#include <openssl/mlkem.h>
 
 #include "bytestring.h"
 #include "ssl_local.h"
@@ -40,6 +41,21 @@ struct tls_key_share {
 	uint8_t *x25519_public;
 	uint8_t *x25519_private;
 	uint8_t *x25519_peer_public;
+
+	uint8_t *mlkem_public;
+	size_t mlkem_public_len;
+	MLKEM_private_key *mlkem_private;
+	MLKEM_public_key *mlkem_peer_public;
+
+	/* The ciphertext from MLKEM_encap. */
+	uint8_t *mlkem_encap;
+	size_t mlkem_encap_len;
+
+	/* The part of the shared secret from an ML-KEM encapsulation. */
+	uint8_t *mlkem_shared_secret;
+	size_t mlkem_shared_secret_len;
+
+	uint8_t *mlkem768x25519_peer_ciphertext;
 };
 
 static struct tls_key_share *
@@ -95,6 +111,13 @@ tls_key_share_free(struct tls_key_share *ks)
 	freezero(ks->x25519_public, X25519_KEY_LENGTH);
 	freezero(ks->x25519_private, X25519_KEY_LENGTH);
 	freezero(ks->x25519_peer_public, X25519_KEY_LENGTH);
+
+	freezero(ks->mlkem_public, ks->mlkem_public_len);
+	MLKEM_private_key_free(ks->mlkem_private);
+	MLKEM_public_key_free(ks->mlkem_peer_public);
+	freezero(ks->mlkem_encap, ks->mlkem_encap_len);
+
+	freezero(ks->mlkem_shared_secret, ks->mlkem_shared_secret_len);
 
 	freezero(ks, sizeof(*ks));
 }
@@ -230,7 +253,82 @@ tls_key_share_generate_x25519(struct tls_key_share *ks)
 	return ret;
 }
 
-int
+static int
+tls_key_share_generate_mlkem(struct tls_key_share *ks, int rank)
+{
+	MLKEM_private_key *private = NULL;
+	uint8_t *public = NULL;
+	size_t p_len = 0;
+
+	if (ks->mlkem_public != NULL || ks->mlkem_private != NULL)
+		goto err;
+
+	if ((private = MLKEM_private_key_new(rank)) == NULL)
+		goto err;
+
+	if (!MLKEM_generate_key(private, &public, &p_len, NULL, NULL))
+		goto err;
+
+	ks->mlkem_public = public;
+	ks->mlkem_public_len = p_len;
+	ks->mlkem_private = private;
+	public = NULL;
+	private = NULL;
+
+	return 1;
+
+ err:
+	freezero(public, p_len);
+	MLKEM_private_key_free(private);
+
+	return 0;
+}
+
+static int
+tls_key_share_client_generate_mlkem768x25519(struct tls_key_share *ks)
+{
+	if (!tls_key_share_generate_mlkem(ks, RANK768))
+		return 0;
+
+	if (!tls_key_share_generate_x25519(ks))
+		return 0;
+
+	return 1;
+}
+
+static int
+tls_key_share_server_generate_mlkem768x25519(struct tls_key_share *ks)
+{
+	size_t s_len;
+
+	if (ks->mlkem_private != NULL)
+		return 0;
+
+	if (ks->mlkem_encap != NULL)
+		return 0;
+
+	if (ks->mlkem_shared_secret != NULL)
+		return 0;
+
+	if (ks->x25519_private != NULL)
+		return 0;
+
+	if (!tls_key_share_generate_x25519(ks))
+		return 0;
+
+	/* The server side needs the client peer's parsed share */
+
+	if (ks->x25519_peer_public == NULL)
+		return 0;
+
+	if (ks->mlkem_peer_public == NULL)
+		return 0;
+
+	return MLKEM_encap(ks->mlkem_peer_public, &ks->mlkem_encap,
+	    &ks->mlkem_encap_len, &ks->mlkem_shared_secret, &s_len);
+}
+
+static int
 tls_key_share_generate(struct tls_key_share *ks)
 {
 	if (ks->nid == NID_dhKeyAgreement)
@@ -240,6 +338,25 @@ tls_key_share_generate(struct tls_key_share *ks)
 		return tls_key_share_generate_x25519(ks);
 
 	return tls_key_share_generate_ecdhe_ecp(ks);
+}
+
+int
+tls_key_share_generate_client(struct tls_key_share *ks)
+{
+	if (ks->nid == NID_MLKEM768_X25519)
+		return tls_key_share_client_generate_mlkem768x25519(ks);
+
+	return tls_key_share_generate(ks);
+}
+
+int
+tls_key_share_generate_server(struct tls_key_share *ks)
+{
+	if (ks->nid == NID_MLKEM768_X25519) {
+		return tls_key_share_server_generate_mlkem768x25519(ks);
+	}
+
+	return tls_key_share_generate(ks);
 }
 
 static int
@@ -287,6 +404,48 @@ tls_key_share_public_x25519(struct tls_key_share *ks, CBB *cbb)
 	return CBB_add_bytes(cbb, ks->x25519_public, X25519_KEY_LENGTH);
 }
 
+static int
+tls_key_share_public_mlkem768x25519(struct tls_key_share *ks, CBB *cbb)
+{
+	uint8_t *mlkem_part;
+	size_t mlkem_part_len;
+
+	if (ks->x25519_public == NULL)
+		return 0;
+
+	if (ks->mlkem_encap == NULL) {
+		/*
+		 * https://datatracker.ietf.org/doc/draft-ietf-tls-ecdhe-mlkem/
+		 * Section 3.1.1:
+		 * The client's key_exchange value is the concatenation of the
+		 * client's ML-KEM-768 encapsulation key and the client's X25519
+		 * ephemeral share.
+		 */
+		if (ks->mlkem_public == NULL)
+			return 0;
+		mlkem_part = ks->mlkem_public;
+		mlkem_part_len = ks->mlkem_public_len;
+	} else {
+		/*
+		 * https://datatracker.ietf.org/doc/draft-ietf-tls-ecdhe-mlkem/
+		 * Section 3.1.2:
+		 * The server's key exchange value is the concatenation of an
+		 * ML-KEM ciphertext returned from encapsulation to the client's
+		 * encapsulation key, and the server's ephemeral X25519 share.
+		 */
+		if (ks->mlkem_shared_secret == NULL)
+			return 0;
+		mlkem_part = ks->mlkem_encap;
+		mlkem_part_len = ks->mlkem_encap_len;
+	}
+
+	if (!CBB_add_bytes(cbb, mlkem_part, mlkem_part_len))
+		return 0;
+
+	/* Both the client and server send their x25519 public keys. */
+	return CBB_add_bytes(cbb, ks->x25519_public, X25519_KEY_LENGTH);
+}
+
 int
 tls_key_share_public(struct tls_key_share *ks, CBB *cbb)
 {
@@ -295,6 +454,9 @@ tls_key_share_public(struct tls_key_share *ks, CBB *cbb)
 
 	if (ks->nid == NID_X25519)
 		return tls_key_share_public_x25519(ks, cbb);
+
+	if (ks->nid == NID_MLKEM768_X25519)
+		return tls_key_share_public_mlkem768x25519(ks, cbb);
 
 	return tls_key_share_public_ecdhe_ecp(ks, cbb);
 }
@@ -325,7 +487,7 @@ tls_key_share_peer_params(struct tls_key_share *ks, CBS *cbs,
 		return 0;
 
 	return tls_key_share_peer_params_dhe(ks, cbs, decode_error,
-	     invalid_params);
+	    invalid_params);
 }
 
 static int
@@ -383,7 +545,91 @@ tls_key_share_peer_public_x25519(struct tls_key_share *ks, CBS *cbs,
 	return CBS_stow(cbs, &ks->x25519_peer_public, &out_len);
 }
 
-int
+static int
+tls_key_share_server_peer_public_mlkem768x25519(struct tls_key_share *ks,
+    CBS *cbs, int *decode_error)
+{
+	CBS x25519_cbs, mlkem_ciphertext_cbs;
+	size_t out_len;
+
+	if (ks->mlkem_shared_secret != NULL)
+		return 0;
+
+	if (ks->mlkem_private == NULL)
+		return 0;
+
+	if (!CBS_get_bytes(cbs, &mlkem_ciphertext_cbs,
+	    MLKEM_private_key_ciphertext_length(ks->mlkem_private)))
+		return 0;
+
+	if (!CBS_get_bytes(cbs, &x25519_cbs, X25519_KEY_LENGTH))
+		return 0;
+
+	if (CBS_len(cbs) != 0)
+		return 0;
+
+	if (!CBS_stow(&x25519_cbs, &ks->x25519_peer_public, &out_len))
+		return 0;
+
+	if (!CBS_stow(&mlkem_ciphertext_cbs, &ks->mlkem_encap, &out_len))
+		return 0;
+
+	return 1;
+}
+
+static int
+tls_key_share_client_peer_public_mlkem768x25519(struct tls_key_share *ks,
+    CBS *cbs, int *decode_error)
+{
+	CBS x25519_cbs, mlkem768_cbs;
+	size_t out_len;
+
+	*decode_error = 0;
+
+	/* The server should not have an mlkem private key */
+	if (ks->mlkem_private != NULL)
+		return 0;
+
+	if (ks->mlkem_shared_secret != NULL)
+		return 0;
+
+	if (ks->mlkem_peer_public != NULL)
+		return 0;
+
+	if (ks->x25519_peer_public != NULL)
+		return 0;
+
+	/* Nein, ist nur normal (1024 ist gigantisch) */
+	if ((ks->mlkem_peer_public = MLKEM_public_key_new(RANK768)) == NULL)
+		goto err;
+
+	if (!CBS_get_bytes(cbs, &mlkem768_cbs,
+	    MLKEM_public_key_encoded_length(ks->mlkem_peer_public)))
+		goto err;
+
+	if (!CBS_get_bytes(cbs, &x25519_cbs, X25519_KEY_LENGTH))
+		goto err;
+
+	if (CBS_len(cbs) != 0)
+		goto err;
+
+	if (!CBS_stow(&x25519_cbs, &ks->x25519_peer_public, &out_len))
+		goto err;
+
+	/* Poetische */
+	if (!MLKEM_parse_public_key(ks->mlkem_peer_public,
+	    CBS_data(&mlkem768_cbs), CBS_len(&mlkem768_cbs)))
+		goto err;
+
+	return 1;
+
+ err:
+	*decode_error = 1;
+
+	return 0;
+}
+
+static int
 tls_key_share_peer_public(struct tls_key_share *ks, CBS *cbs, int *decode_error,
     int *invalid_key)
 {
@@ -400,6 +646,30 @@ tls_key_share_peer_public(struct tls_key_share *ks, CBS *cbs, int *decode_error,
 		return tls_key_share_peer_public_x25519(ks, cbs, decode_error);
 
 	return tls_key_share_peer_public_ecdhe_ecp(ks, cbs);
+}
+
+/* Called from client to process a server peer */
+int
+tls_key_share_server_peer_public(struct tls_key_share *ks, CBS *cbs,
+    int *decode_error, int *invalid_key)
+{
+	if (ks->nid == NID_MLKEM768_X25519)
+		return tls_key_share_server_peer_public_mlkem768x25519(ks, cbs,
+		    decode_error);
+
+	return tls_key_share_peer_public(ks, cbs, decode_error, invalid_key);
+}
+
+/* Called from server to process a client peer */
+int
+tls_key_share_client_peer_public(struct tls_key_share *ks, CBS *cbs,
+    int *decode_error, int *invalid_key)
+{
+	if (ks->nid == NID_MLKEM768_X25519)
+		return tls_key_share_client_peer_public_mlkem768x25519(ks, cbs,
+		    decode_error);
+
+	return tls_key_share_peer_public(ks, cbs, decode_error, invalid_key);
 }
 
 static int
@@ -451,6 +721,60 @@ tls_key_share_derive_x25519(struct tls_key_share *ks,
 	return ret;
 }
 
+/*
+ * https://datatracker.ietf.org/doc/draft-ietf-tls-ecdhe-mlkem/
+ * Section 3.1.3:
+ * For X25519MLKEM768, the shared secret is the concatenation of the ML-KEM
+ * shared secret and the X25519 shared secret.
+ */
+static int
+tls_key_share_derive_mlkem768x25519(struct tls_key_share *ks,
+    uint8_t **out_shared_key, size_t *out_shared_key_len)
+{
+	size_t shared_secret_len = 0;
+
+	uint8_t *shared_secret = NULL;
+
+	if (ks->x25519_private == NULL)
+		goto err;
+
+	if (ks->x25519_peer_public == NULL)
+		goto err;
+
+	if (ks->mlkem_shared_secret == NULL) {
+		if (ks->mlkem_private == NULL)
+			goto err;
+
+		if (ks->mlkem_encap == NULL)
+			goto err;
+
+		if (!MLKEM_decap(ks->mlkem_private, ks->mlkem_encap,
+		    MLKEM_private_key_ciphertext_length(ks->mlkem_private),
+		    &ks->mlkem_shared_secret, &ks->mlkem_shared_secret_len))
+			goto err;
+	}
+
+	shared_secret_len = ks->mlkem_shared_secret_len + X25519_KEY_LENGTH;
+	if ((shared_secret = calloc(1, shared_secret_len)) == NULL)
+		goto err;
+	memcpy(shared_secret, ks->mlkem_shared_secret,
+	    ks->mlkem_shared_secret_len);
+
+	if (!X25519(shared_secret + ks->mlkem_shared_secret_len,
+	    ks->x25519_private, ks->x25519_peer_public))
+		goto err;
+
+	*out_shared_key = shared_secret;
+	*out_shared_key_len = shared_secret_len;
+
+	return 1;
+
+ err:
+	freezero(shared_secret, shared_secret_len);
+
+	return 0;
+}
+
 int
 tls_key_share_derive(struct tls_key_share *ks, uint8_t **shared_key,
     size_t *shared_key_len)
@@ -466,6 +790,10 @@ tls_key_share_derive(struct tls_key_share *ks, uint8_t **shared_key,
 
 	if (ks->nid == NID_X25519)
 		return tls_key_share_derive_x25519(ks, shared_key,
+		    shared_key_len);
+
+	if (ks->nid == NID_MLKEM768_X25519)
+		return tls_key_share_derive_mlkem768x25519(ks, shared_key,
 		    shared_key_len);
 
 	return tls_key_share_derive_ecdhe_ecp(ks, shared_key,
