@@ -1523,7 +1523,7 @@ tlsext_keyshare_server_process(SSL *s, uint16_t msg_type, CBS *cbs, int *alert)
 			*alert = SSL_AD_INTERNAL_ERROR;
 			return 0;
 		}
-		if (!tls_key_share_peer_public(s->s3->hs.key_share,
+		if (!tls_key_share_server_peer_public(s->s3->hs.key_share,
 		    &key_exchange, &decode_error, NULL)) {
 			if (!decode_error)
 				*alert = SSL_AD_INTERNAL_ERROR;
@@ -1614,7 +1614,7 @@ tlsext_keyshare_server_process(SSL *s, uint16_t msg_type, CBS *cbs, int *alert)
 			*alert = SSL_AD_INTERNAL_ERROR;
 			return 0;
 		}
-		if (!tls_key_share_peer_public(s->s3->hs.key_share,
+		if (!tls_key_share_server_peer_public(s->s3->hs.key_share,
 		    &key_exchange, &decode_error, NULL)) {
 			if (!decode_error)
 				*alert = SSL_AD_INTERNAL_ERROR;
