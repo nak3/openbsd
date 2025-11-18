@@ -490,6 +490,9 @@ typedef struct ssl_handshake_tls13_st {
 	/* Certificate selected for use (static pointer). */
 	const SSL_CERT_PKEY *cpk;
 
+	/* Client's extra predicted key share */
+	struct tls_key_share *key_share;
+
 	/* Version proposed by peer server. */
 	uint16_t server_version;
 

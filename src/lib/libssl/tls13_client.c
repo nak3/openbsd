@@ -53,8 +53,20 @@ tls13_client_init(struct tls13_ctx *ctx)
 		return 0;
 	if ((ctx->hs->key_share = tls_key_share_new(groups[0])) == NULL)
 		return 0;
-	if (!tls_key_share_generate(ctx->hs->key_share))
+	if (!tls_key_share_client_generate(ctx->hs->key_share))
 		return 0;
+
+	/*
+	 * Generate a second key share prediction if we have another
+	 * supported group
+	 */
+	if (groups_len > 1) {
+		if ((ctx->hs->tls13.key_share = tls_key_share_new(groups[1])) ==
+		    NULL)
+			return 0;
+		if (!tls_key_share_client_generate(ctx->hs->tls13.key_share))
+			return 0;
+	}
 
 	arc4random_buf(s->s3->client_random, SSL3_RANDOM_SIZE);
 
