@@ -352,8 +352,7 @@ main(int argc, char **argv)
 {
 	int failed = 0;
 
-
-	printf("%p\n", &CMS_RecipientInfo_set0_password);
+	printf("@@@ %p\n", &CMS_RecipientInfo_set0_password);
 
 	ERR_load_crypto_strings();
 
@@ -361,5 +360,6 @@ main(int argc, char **argv)
 	failed |= test_cms_sign_verify(cms_ca_1, cms_cert_1, cms_key_1);
 	failed |= test_cms_sign_verify(cms_ca_2, cms_cert_2, cms_key_2);
 
-	return failed;
+	//return failed;
+	return 1;
 }
