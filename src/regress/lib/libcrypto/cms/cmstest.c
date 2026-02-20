@@ -352,6 +352,9 @@ main(int argc, char **argv)
 {
 	int failed = 0;
 
+
+	printf("%p\n", &CMS_RecipientInfo_set0_password);
+
 	ERR_load_crypto_strings();
 
 	failed |= test_cms_encrypt_decrypt();
