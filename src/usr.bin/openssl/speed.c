@@ -78,6 +78,7 @@
 #define DSA_SECONDS	10
 #define ECDSA_SECONDS   10
 #define ECDH_SECONDS    10
+#define MLKEM_SECONDS	10
 
 #define MAX_UNALIGN	16
 
@@ -98,6 +99,7 @@
 #include <openssl/modes.h>
 #include <openssl/objects.h>
 #include <openssl/x509.h>
+#include <openssl/mlkem.h>
 
 #ifndef OPENSSL_NO_AES
 #include <openssl/aes.h>
@@ -214,6 +216,13 @@ enum {
 	EC_NUM,
 };
 
+#if 0 // TODO
+enum {
+	MLKEM_NUM,
+}
+#endif
+#define	MLKEM_NUM 2
+
 static const char *names[ALGOR_NUM] = {
 	"md4", "md5", "hmac(sha256)", "sha1", "rmd160",
 	"rc4", "des cbc", "des ede3", "idea cbc",
@@ -230,6 +239,7 @@ static double rsa_results[RSA_NUM][2];
 static double dsa_results[DSA_NUM][2];
 static double ecdsa_results[EC_NUM][2];
 static double ecdh_results[EC_NUM][1];
+static double mlkem_results[MLKEM_NUM][2];
 
 static void sig_done(int sig);
 
@@ -1084,6 +1094,7 @@ speed_main(int argc, char **argv)
 	int dsa_doit[DSA_NUM];
 	int ecdsa_doit[EC_NUM];
 	int ecdh_doit[EC_NUM];
+	int mlkem_doit[MLKEM_NUM];
 	int doit[ALGOR_NUM];
 	int pr_header = 0;
 	const EVP_CIPHER *evp_cipher = NULL;
@@ -1134,6 +1145,8 @@ speed_main(int argc, char **argv)
 		ecdsa_doit[i] = 0;
 	for (i = 0; i < EC_NUM; i++)
 		ecdh_doit[i] = 0;
+	for (i = 0; i < MLKEM_NUM; i++)
+		mlkem_doit[i] = 0;
 
 
 	j = 0;
@@ -1394,6 +1407,13 @@ speed_main(int argc, char **argv)
 		else if (strcmp(*argv, "ecdh") == 0) {
 			for (i = 0; i < EC_NUM; i++)
 				ecdh_doit[i] = 1;
+		} else if (strcmp(*argv, "mlkem") == 0) {
+			mlkem_doit[0] = 1;
+			mlkem_doit[1] = 1;
+		} else if (strcmp(*argv, "mlkem768") == 0) {
+			mlkem_doit[0] = 2;
+		} else if (strcmp(*argv, "mlkem1024") == 0) {
+			mlkem_doit[1] = 2;
 		} else {
 			BIO_printf(bio_err, "Error: bad option or value\n");
 			BIO_printf(bio_err, "\n");
@@ -1459,6 +1479,7 @@ speed_main(int argc, char **argv)
 			BIO_printf(bio_err, "dsa512   dsa1024  dsa2048\n");
 			BIO_printf(bio_err, "ecdsap224 ecdsap256 ecdsap384 ecdsap521\n");
 			BIO_printf(bio_err, "ecdhp224  ecdhp256  ecdhp384  ecdhp521\n");
+			BIO_printf(bio_err, "mlkem768  mlkem1024\n");
 
 #ifndef OPENSSL_NO_IDEA
 			BIO_printf(bio_err, "idea     ");
@@ -2362,6 +2383,98 @@ speed_main(int argc, char **argv)
 				ecdh_doit[j] = 0;
 		}
 	}
+
+    /*
+     * === MLKEM SPEED TEST ===
+     */
+    for (j = 0; j < MLKEM_NUM; j++) {
+        if (!mlkem_doit[j])
+            continue;
+
+        int rank = (j == 0) ? MLKEM768_RANK : MLKEM1024_RANK;
+
+        MLKEM_private_key *priv = MLKEM_private_key_new(rank);
+        MLKEM_public_key *pub = MLKEM_public_key_new(rank);
+        uint8_t *encoded_pub = NULL;
+        size_t encoded_pub_len = 0;
+
+        if (priv == NULL || pub == NULL)
+            goto mlkem_err;
+
+        /* KeyGen */
+        if (!MLKEM_generate_key(priv,
+            &encoded_pub, &encoded_pub_len,
+            NULL, NULL))
+            goto mlkem_err;
+        if (!MLKEM_parse_public_key(pub, encoded_pub, encoded_pub_len))
+            goto mlkem_err;
+
+        free(encoded_pub);
+        encoded_pub = NULL;
+
+        /* === Encap test === */
+        pkey_print_message("encap", "mlkem",
+            (j == 0) ? 768 : 1024,
+            MLKEM_SECONDS /* seconds */);
+
+        run = 1;
+        count = 0;
+ //       alarm(3);
+
+        while (run) {
+            uint8_t *ct = NULL, *ss = NULL;
+            size_t ct_len = 0, ss_len = 0;
+            if (!MLKEM_encap(pub, &ct, &ct_len, &ss, &ss_len))
+                break;
+            free(ct);
+            free(ss);
+            count++;
+        }
+        d = time_f(STOP);
+        mlkem_results[j][0] = d / (double)count;
+        BIO_printf(bio_err, "%ld ML-KEM-%d encap in %.2fs\n",
+            count, (j==0)?768:1024, d);
+
+        /* === Decap test === */
+        uint8_t *ct = NULL, *ss = NULL;
+        size_t ct_len = 0, ss_len = 0;
+        if (!MLKEM_encap(pub, &ct, &ct_len, &ss, &ss_len))
+            goto mlkem_err;
+        free(ss);
+
+        pkey_print_message("decap", "mlkem",
+            (j == 0) ? 768 : 1024,
+            MLKEM_SECONDS);
+
+        run = 1;
+        count = 0;
+  //      alarm(3);
+
+        while (run) {
+            uint8_t *ss2 = NULL;
+            size_t ss2_len = 0;
+            if (!MLKEM_decap(priv, ct, ct_len, &ss2, &ss2_len))
+                break;
+            free(ss2);
+            count++;
+        }
+        d = time_f(STOP);
+        mlkem_results[j][1] = d / (double)count;
+        BIO_printf(bio_err, "%ld ML-KEM-%d decap in %.2fs\n",
+            count, (j==0)?768:1024, d);
+
+        free(ct);
+        MLKEM_private_key_free(priv);
+        MLKEM_public_key_free(pub);
+        continue;
+
+ mlkem_err:
+        BIO_printf(bio_err, "MLKEM failure\n");
+        if (priv) MLKEM_private_key_free(priv);
+        if (pub) MLKEM_public_key_free(pub);
+        if (encoded_pub) free(encoded_pub);
+    }
+
 show_res:
 	if (!mr) {
 		fprintf(stdout, "%s\n", SSLeay_version(SSLEAY_VERSION));
@@ -2468,6 +2581,21 @@ show_res:
 			    test_curves_names[k],
 			    ecdh_results[k][0], 1.0 / ecdh_results[k][0]);
 	}
+
+    /*
+     * ML-KEM results
+     */
+    for (k = 0; k < MLKEM_NUM; k++) {
+        if (!mlkem_doit[k])
+            continue;
+        int bits = (k == 0) ? 768 : 1024;
+        fprintf(stdout,
+            //"mlkem%-4d encap: %8.4fs %8.1f ops/s   decap: %8.4fs %8.1f ops/s\n",
+	    "mlkem%4d encap: %12.8fs %10.1f ops/s   decap: %12.8fs %10.1f ops/s\n",
+            bits,
+            mlkem_results[k][0], 1.0 / mlkem_results[k][0],
+            mlkem_results[k][1], 1.0 / mlkem_results[k][1]);
+    }
 
 	mret = 0;
 
