@@ -59,6 +59,92 @@
 
 #include "atomicio.h"
 
+/* Secure temporary socket creation */
+#define TEMPCHARS "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+#define NUM_CHARS (sizeof(TEMPCHARS) - 1)
+
+#ifndef nitems
+#define nitems(x) (sizeof(x) / sizeof((x)[0]))
+#endif
+
+#ifndef SOCK_CLOEXEC
+#define SOCK_CLOEXEC 0
+#endif
+
+static char *
+mkstempsock(const char *root, char *path)
+{
+    struct sockaddr_un sun;
+    int fd, saved_errno;
+    unsigned short rbuf[16];
+    char *start, *cp, *ep;
+    size_t len;
+    unsigned int tries;
+
+    len = strlen(path);
+    ep = path + len - 6;  /* At least 6 'X' characters */
+    if (ep <= path) {
+        errno = EINVAL;
+        return NULL;
+    }
+
+    for (start = ep; start > path && start[-1] == 'X'; start--)
+        /* continue */ ;
+
+    if (ep - start < 6) {
+        errno = EINVAL;
+        return NULL;
+    }
+
+    tries = INT_MAX;
+    do {
+        cp = start;
+        do {
+            arc4random_buf(rbuf, sizeof(rbuf));
+            for (unsigned int i = 0; i < nitems(rbuf) && cp != ep; i++)
+                *cp++ = TEMPCHARS[rbuf[i] % NUM_CHARS];
+        } while (cp != ep);
+
+        memset(&sun, 0, sizeof(sun));
+        sun.sun_family = AF_UNIX;
+        if ((len = strlcpy(sun.sun_path, root,
+            sizeof(sun.sun_path))) >= sizeof(sun.sun_path)) {
+            errno = EINVAL;
+            return NULL;
+        }
+        if (sun.sun_path[len] != '/') {
+            if (strlcat(sun.sun_path, "/",
+                sizeof(sun.sun_path)) >= sizeof(sun.sun_path)) {
+                errno = EINVAL;
+                return NULL;
+            }
+        }
+        if (strlcat(sun.sun_path, path,
+            sizeof(sun.sun_path)) >= sizeof(sun.sun_path)) {
+            errno = EINVAL;
+            return NULL;
+        }
+
+        /* Use SOCK_DGRAM for datagram sockets */
+        if ((fd = socket(AF_UNIX, SOCK_DGRAM | SOCK_CLOEXEC, 0)) == -1)
+            return NULL;
+
+        if (bind(fd, (struct sockaddr *)&sun, sizeof(sun)) == 0) {
+            close(fd);
+            return path;
+        }
+        saved_errno = errno;
+        close(fd);
+        if (saved_errno != EEXIST) {
+            errno = saved_errno;
+            return NULL;
+        }
+    } while (--tries);
+
+    errno = EEXIST;
+    return NULL;
+}
+
 #define PORT_MAX	65535
 #define UNIX_DG_TMP_SOCKET_SIZE	19
 
@@ -462,8 +548,8 @@ main(int argc, char *argv[])
 		} else {
 			strlcpy(unix_dg_tmp_socket_buf, "/tmp/nc.XXXXXXXXXX",
 			    UNIX_DG_TMP_SOCKET_SIZE);
-			if (mktemp(unix_dg_tmp_socket_buf) == NULL)
-				err(1, "mktemp");
+			if (mkstempsock("/tmp", unix_dg_tmp_socket_buf) == NULL)
+				err(1, "mkstempsock");
 			unix_dg_tmp_socket = unix_dg_tmp_socket_buf;
 		}
 	}
