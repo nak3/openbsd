@@ -216,12 +216,12 @@ enum {
 	EC_NUM,
 };
 
-#if 0 // TODO
 enum {
+	R_MLKEM_768,
+	R_MLKEM_1024,
 	MLKEM_NUM,
 }
 #endif
-#define	MLKEM_NUM 2
 
 static const char *names[ALGOR_NUM] = {
 	"md4", "md5", "hmac(sha256)", "sha1", "rmd160",
@@ -1408,12 +1408,12 @@ speed_main(int argc, char **argv)
 			for (i = 0; i < EC_NUM; i++)
 				ecdh_doit[i] = 1;
 		} else if (strcmp(*argv, "mlkem") == 0) {
-			mlkem_doit[0] = 1;
-			mlkem_doit[1] = 1;
+			mlkem_doit[R_MLKEM_768] = 1;
+			mlkem_doit[R_MLKEM_1024] = 1;
 		} else if (strcmp(*argv, "mlkem768") == 0) {
-			mlkem_doit[0] = 2;
+			mlkem_doit[R_MLKEM_768] = 2;
 		} else if (strcmp(*argv, "mlkem1024") == 0) {
-			mlkem_doit[1] = 2;
+			mlkem_doit[R_MLKEM_1024] = 2;
 		} else {
 			BIO_printf(bio_err, "Error: bad option or value\n");
 			BIO_printf(bio_err, "\n");
@@ -2401,6 +2401,7 @@ speed_main(int argc, char **argv)
         if (priv == NULL || pub == NULL)
             goto mlkem_err;
 
+#if 0
         /* KeyGen */
         if (!MLKEM_generate_key(priv,
             &encoded_pub, &encoded_pub_len,
@@ -2411,6 +2412,53 @@ speed_main(int argc, char **argv)
 
         free(encoded_pub);
         encoded_pub = NULL;
+#endif
+
+	/* === KeyGen test (追加セクション) === */
+        pkey_print_message("keygen", "mlkem", 
+            (j == 0) ? 768 : 1024,
+	    MLKEM_SECONDS);
+
+        run = 1;
+        count = 0;
+        // alarm(3); // タイマー開始（環境に依存）
+
+        // 時間計測開始（time_fは既存の関数を使用）
+        time_f(START);
+
+        while (run) {
+            MLKEM_private_key *priv_tmp = MLKEM_private_key_new(rank);
+            uint8_t *enc_pub_tmp = NULL;
+            size_t enc_pub_len_tmp = 0;
+
+            if (!MLKEM_generate_key(priv_tmp, &enc_pub_tmp, &enc_pub_len_tmp, NULL, NULL)) {
+                MLKEM_private_key_free(priv_tmp);
+                break;
+            }
+
+            // メモリリーク防止のため、生成した鍵を即座に解放
+            MLKEM_private_key_free(priv_tmp);
+            free(enc_pub_tmp);
+            count++;
+        }
+        d = time_f(STOP);
+        mlkem_results[j][2] = d / (double)count; // 結果の保存（配列サイズに注意）
+        BIO_printf(bio_err, "%ld ML-KEM-%d keygen in %.2fs\n", 
+		    	count, (j==0)?768:1024, d);
+	
+        /* * 以降の Encap/Decap テストで使うための「固定の鍵」を1セット用意
+         */
+		
+	priv = MLKEM_private_key_new(rank);
+	pub = MLKEM_public_key_new(rank);
+        uint8_t *encoded_pub = NULL;
+        size_t encoded_pub_len = 0;
+
+        if (!MLKEM_generate_key(priv, &encoded_pub, &encoded_pub_len, NULL, NULL) ||
+            !MLKEM_parse_public_key(pub, encoded_pub, encoded_pub_len)) {
+            goto mlkem_err;
+        }
+        free(encoded_pub);
 
         /* === Encap test === */
         pkey_print_message("encap", "mlkem",
