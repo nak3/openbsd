@@ -220,8 +220,7 @@ enum {
 	R_MLKEM_768,
 	R_MLKEM_1024,
 	MLKEM_NUM,
-}
-#endif
+};
 
 static const char *names[ALGOR_NUM] = {
 	"md4", "md5", "hmac(sha256)", "sha1", "rmd160",
@@ -239,7 +238,7 @@ static double rsa_results[RSA_NUM][2];
 static double dsa_results[DSA_NUM][2];
 static double ecdsa_results[EC_NUM][2];
 static double ecdh_results[EC_NUM][1];
-static double mlkem_results[MLKEM_NUM][2];
+static double mlkem_results[MLKEM_NUM][3];
 
 static void sig_done(int sig);
 
@@ -2421,7 +2420,6 @@ speed_main(int argc, char **argv)
 
         run = 1;
         count = 0;
-        // alarm(3); // タイマー開始（環境に依存）
 
         // 時間計測開始（time_fは既存の関数を使用）
         time_f(START);
@@ -2451,8 +2449,6 @@ speed_main(int argc, char **argv)
 		
 	priv = MLKEM_private_key_new(rank);
 	pub = MLKEM_public_key_new(rank);
-        uint8_t *encoded_pub = NULL;
-        size_t encoded_pub_len = 0;
 
         if (!MLKEM_generate_key(priv, &encoded_pub, &encoded_pub_len, NULL, NULL) ||
             !MLKEM_parse_public_key(pub, encoded_pub, encoded_pub_len)) {
@@ -2467,7 +2463,6 @@ speed_main(int argc, char **argv)
 
         run = 1;
         count = 0;
- //       alarm(3);
 
         while (run) {
             uint8_t *ct = NULL, *ss = NULL;
@@ -2496,7 +2491,6 @@ speed_main(int argc, char **argv)
 
         run = 1;
         count = 0;
-  //      alarm(3);
 
         while (run) {
             uint8_t *ss2 = NULL;
@@ -2517,10 +2511,10 @@ speed_main(int argc, char **argv)
         continue;
 
  mlkem_err:
-        BIO_printf(bio_err, "MLKEM failure\n");
-        if (priv) MLKEM_private_key_free(priv);
-        if (pub) MLKEM_public_key_free(pub);
-        if (encoded_pub) free(encoded_pub);
+	BIO_printf(bio_err, "MLKEM failure\n");
+       	if (priv) MLKEM_private_key_free(priv);
+	if (pub) MLKEM_public_key_free(pub);
+	if (encoded_pub) free(encoded_pub);
     }
 
 show_res:
