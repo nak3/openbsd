@@ -96,10 +96,10 @@
 #include <openssl/crypto.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
+#include <openssl/mlkem.h>
 #include <openssl/modes.h>
 #include <openssl/objects.h>
 #include <openssl/x509.h>
-#include <openssl/mlkem.h>
 
 #ifndef OPENSSL_NO_AES
 #include <openssl/aes.h>
