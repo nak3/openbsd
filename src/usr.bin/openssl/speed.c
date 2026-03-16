@@ -2416,7 +2416,7 @@ speed_main(int argc, char **argv)
 		d = time_f(STOP);
 		BIO_printf(bio_err, mr ? "+R8:%ld:%d:%.2f\n"
 		    : "%ld %d-bit ML-KEM keygen in %.2fs\n", count, bits, d);
-		mlkem_results[j][0] = d / (double)count;
+		mlkem_results[j][2] = d / (double)count;
 		rsa_count = count;
 
 		if ((priv = MLKEM_private_key_new(rank)) == NULL ||
@@ -2444,7 +2444,7 @@ speed_main(int argc, char **argv)
 		d = time_f(STOP);
 		BIO_printf(bio_err, mr ? "+R9:%ld:%d:%.2f\n"
 		    : "%ld %d-bit ML-KEM encap in %.2fs\n", count, bits, d);
-		mlkem_results[j][1] = d / (double)count;
+		mlkem_results[j][0] = d / (double)count;
 		rsa_count = count;
 
 		if (!MLKEM_encap(pub, &ct, &ct_len, &ss, &ss_len))
@@ -2465,7 +2465,7 @@ speed_main(int argc, char **argv)
 		d = time_f(STOP);
 		BIO_printf(bio_err, mr ? "+R10:%ld:%d:%.2f\n"
 		    : "%ld %d-bit ML-KEM decap in %.2fs\n", count, bits, d);
-		mlkem_results[j][2] = d / (double)count;
+		mlkem_results[j][1] = d / (double)count;
 		rsa_count = count;
 
 		free(ct);
@@ -2609,16 +2609,16 @@ speed_main(int argc, char **argv)
 		if (mr)
 			fprintf(stdout, "+F6:%u:%f:%f:%f:%f:%f:%f\n",
 			    bits,
+			    mlkem_results[k][2], 1.0 / mlkem_results[k][2],
 			    mlkem_results[k][0], 1.0 / mlkem_results[k][0],
-			    mlkem_results[k][1], 1.0 / mlkem_results[k][1],
-			    mlkem_results[k][2], 1.0 / mlkem_results[k][2]);
+			    mlkem_results[k][1], 1.0 / mlkem_results[k][1]);
 		else
 			fprintf(stdout,
 			    "mlkem%4d %8.4fs %8.1f %8.4fs %8.1f %8.4fs %8.1f\n",
 			    bits,
+			    mlkem_results[k][2], 1.0 / mlkem_results[k][2],
 			    mlkem_results[k][0], 1.0 / mlkem_results[k][0],
-			    mlkem_results[k][1], 1.0 / mlkem_results[k][1],
-			    mlkem_results[k][2], 1.0 / mlkem_results[k][2]);
+			    mlkem_results[k][1], 1.0 / mlkem_results[k][1]);
 	}
 
 	mret = 0;
