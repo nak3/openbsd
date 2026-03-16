@@ -2603,7 +2603,10 @@ speed_main(int argc, char **argv)
 		if (!mlkem_doit[k])
 			continue;
 		if (j && !mr) {
-			printf("%30skeygen  keygen/s    encap    encap/s    decap    decap/s\n", " ");
+			printf("%-9s%10s%9s%10s%9s%10s%9s\n",
+			    "", "keygen", "keygen/s",
+			    "encap", "encap/s",
+			    "decap", "decap/s");
 			j = 0;
 		}
 		if (mr)
