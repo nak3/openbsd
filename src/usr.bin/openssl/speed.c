@@ -2415,6 +2415,8 @@ speed_main(int argc, char **argv)
 			free(enc_pub_tmp);
 		}
 		d = time_f(STOP);
+		if (run)
+			goto mlkem_err;
 		BIO_printf(bio_err, mr ? "+R8:%ld:%d:%.2f\n"
 		    : "%ld %d-bit ML-KEM keygen in %.2fs\n", count, bits, d);
 		mlkem_results[j][2] = d / (double)count;
@@ -2443,6 +2445,8 @@ speed_main(int argc, char **argv)
 			free(ss_tmp);
 		}
 		d = time_f(STOP);
+		if (run)
+			goto mlkem_err;
 		BIO_printf(bio_err, mr ? "+R9:%ld:%d:%.2f\n"
 		    : "%ld %d-bit ML-KEM encap in %.2fs\n", count, bits, d);
 		mlkem_results[j][0] = d / (double)count;
@@ -2464,6 +2468,8 @@ speed_main(int argc, char **argv)
 			free(ss_tmp);
 		}
 		d = time_f(STOP);
+		if (run)
+			goto mlkem_err;
 		BIO_printf(bio_err, mr ? "+R10:%ld:%d:%.2f\n"
 		    : "%ld %d-bit ML-KEM decap in %.2fs\n", count, bits, d);
 		mlkem_results[j][1] = d / (double)count;
