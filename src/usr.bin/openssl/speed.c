@@ -2383,116 +2383,111 @@ speed_main(int argc, char **argv)
 		}
 	}
 
-    	for (j = 0; j < MLKEM_NUM; j++) {
-		if (!mlkem_doit[j]) {
-			continue;
-		}
-
+	for (j = 0; j < MLKEM_NUM; j++) {
 		int rank = (j == 0) ? MLKEM768_RANK : MLKEM1024_RANK;
-
-		MLKEM_private_key *priv;
-		MLKEM_public_key *pub;
+		int bits = (j == 0) ? 768 : 1024;
+		MLKEM_private_key *priv = NULL;
+		MLKEM_public_key *pub = NULL;
 		uint8_t *encoded_pub = NULL;
 		size_t encoded_pub_len = 0;
+		uint8_t *ct = NULL, *ss = NULL;
+		size_t ct_len = 0, ss_len = 0;
 
-		pkey_print_message("keygen", "mlkem", 
-			   	(j == 0) ? 768 : 1024,
-		    		MLKEM_SECONDS);
-	  	run = 1;
-	     	count = 0;
+		if (!mlkem_doit[j])
+			continue;
 
+		pkey_print_message("keygen", "mlkem", bits, MLKEM_SECONDS);
 		time_f(START);
+		for (count = 0, run = 1; COND; count++) {
+			MLKEM_private_key *priv_tmp;
+			uint8_t *enc_pub_tmp = NULL;
+			size_t enc_pub_len_tmp = 0;
 
-		while (run) {
-	    		MLKEM_private_key *priv_tmp = MLKEM_private_key_new(rank);
-		       	uint8_t *enc_pub_tmp = NULL;
-	    		size_t enc_pub_len_tmp = 0;
-
-	    		if (!MLKEM_generate_key(priv_tmp, &enc_pub_tmp, &enc_pub_len_tmp, NULL, NULL)) {
+			if ((priv_tmp = MLKEM_private_key_new(rank)) == NULL)
+				break;
+			if (!MLKEM_generate_key(priv_tmp, &enc_pub_tmp,
+			    &enc_pub_len_tmp, NULL, NULL)) {
 				MLKEM_private_key_free(priv_tmp);
 				break;
-	    		}
-
-	    		MLKEM_private_key_free(priv_tmp);
-	    		free(enc_pub_tmp);
-	    		count++;
+			}
+			MLKEM_private_key_free(priv_tmp);
+			free(enc_pub_tmp);
 		}
- 
-	 	d = time_f(STOP);
+		d = time_f(STOP);
+		BIO_printf(bio_err, mr ? "+R8:%ld:%d:%.2f\n"
+		    : "%ld %d-bit ML-KEM keygen in %.2fs\n", count, bits, d);
 		mlkem_results[j][2] = d / (double)count;
-		BIO_printf(bio_err, "%ld ML-KEM-%d keygen in %.2fs\n", 
-				count, (j==0)?768:1024, d);
-	
-	
-		priv = MLKEM_private_key_new(rank);
-		pub = MLKEM_public_key_new(rank);
+		rsa_count = count;
 
-		if (!MLKEM_generate_key(priv, &encoded_pub, &encoded_pub_len, NULL, NULL) ||
-		    		!MLKEM_parse_public_key(pub, encoded_pub, encoded_pub_len)) {
-	    		goto mlkem_err;
-		}
+		if ((priv = MLKEM_private_key_new(rank)) == NULL ||
+		    (pub = MLKEM_public_key_new(rank)) == NULL)
+			goto mlkem_err;
+		if (!MLKEM_generate_key(priv, &encoded_pub, &encoded_pub_len,
+		    NULL, NULL) ||
+		    !MLKEM_parse_public_key(pub, encoded_pub, encoded_pub_len))
+			goto mlkem_err;
 		free(encoded_pub);
+		encoded_pub = NULL;
 
-        /* === Encap test === */
-        pkey_print_message("encap", "mlkem",
-            (j == 0) ? 768 : 1024,
-            MLKEM_SECONDS /* seconds */);
+		pkey_print_message("encap", "mlkem", bits, MLKEM_SECONDS);
+		time_f(START);
+		for (count = 0, run = 1; COND; count++) {
+			uint8_t *ct_tmp = NULL, *ss_tmp = NULL;
+			size_t ct_len_tmp = 0, ss_len_tmp = 0;
 
-        run = 1;
-        count = 0;
+			if (!MLKEM_encap(pub, &ct_tmp, &ct_len_tmp, &ss_tmp,
+			    &ss_len_tmp))
+				break;
+			free(ct_tmp);
+			free(ss_tmp);
+		}
+		d = time_f(STOP);
+		BIO_printf(bio_err, mr ? "+R9:%ld:%d:%.2f\n"
+		    : "%ld %d-bit ML-KEM encap in %.2fs\n", count, bits, d);
+		mlkem_results[j][0] = d / (double)count;
+		rsa_count = count;
 
-        while (run) {
-            uint8_t *ct = NULL, *ss = NULL;
-            size_t ct_len = 0, ss_len = 0;
-            if (!MLKEM_encap(pub, &ct, &ct_len, &ss, &ss_len))
-                break;
-            free(ct);
-            free(ss);
-            count++;
-        }
-        d = time_f(STOP);
-        mlkem_results[j][0] = d / (double)count;
-        BIO_printf(bio_err, "%ld ML-KEM-%d encap in %.2fs\n",
-            count, (j==0)?768:1024, d);
+		if (!MLKEM_encap(pub, &ct, &ct_len, &ss, &ss_len))
+			goto mlkem_err;
+		free(ss);
+		ss = NULL;
 
-        /* === Decap test === */
-        uint8_t *ct = NULL, *ss = NULL;
-        size_t ct_len = 0, ss_len = 0;
-        if (!MLKEM_encap(pub, &ct, &ct_len, &ss, &ss_len))
-            goto mlkem_err;
-        free(ss);
+		pkey_print_message("decap", "mlkem", bits, MLKEM_SECONDS);
+		time_f(START);
+		for (count = 0, run = 1; COND; count++) {
+			uint8_t *ss_tmp = NULL;
+			size_t ss_len_tmp = 0;
 
-        pkey_print_message("decap", "mlkem",
-            (j == 0) ? 768 : 1024,
-            MLKEM_SECONDS);
+			if (!MLKEM_decap(priv, ct, ct_len, &ss_tmp, &ss_len_tmp))
+				break;
+			free(ss_tmp);
+		}
+		d = time_f(STOP);
+		BIO_printf(bio_err, mr ? "+R10:%ld:%d:%.2f\n"
+		    : "%ld %d-bit ML-KEM decap in %.2fs\n", count, bits, d);
+		mlkem_results[j][1] = d / (double)count;
+		rsa_count = count;
 
-        run = 1;
-        count = 0;
+		free(ct);
+		MLKEM_private_key_free(priv);
+		MLKEM_public_key_free(pub);
 
-        while (run) {
-            uint8_t *ss2 = NULL;
-            size_t ss2_len = 0;
-            if (!MLKEM_decap(priv, ct, ct_len, &ss2, &ss2_len))
-                break;
-            free(ss2);
-            count++;
-        }
-        d = time_f(STOP);
-        mlkem_results[j][1] = d / (double)count;
-        BIO_printf(bio_err, "%ld ML-KEM-%d decap in %.2fs\n",
-            count, (j==0)?768:1024, d);
-
-        free(ct);
-        MLKEM_private_key_free(priv);
-        MLKEM_public_key_free(pub);
-        continue;
+		if (rsa_count <= 1) {
+			/* if longer than 10s, don't do any more */
+			for (j++; j < MLKEM_NUM; j++)
+				mlkem_doit[j] = 0;
+		}
+		continue;
 
  mlkem_err:
-	BIO_printf(bio_err, "MLKEM failure\n");
-       	MLKEM_private_key_free(priv);
-	MLKEM_public_key_free(pub);
-	free(encoded_pub);
-    }
+		BIO_printf(bio_err, "MLKEM failure\n");
+		ERR_print_errors(bio_err);
+		MLKEM_private_key_free(priv);
+		MLKEM_public_key_free(pub);
+		free(encoded_pub);
+		free(ct);
+		free(ss);
+	}
 
  show_res:
 	if (!mr) {
@@ -2601,20 +2596,30 @@ speed_main(int argc, char **argv)
 			    ecdh_results[k][0], 1.0 / ecdh_results[k][0]);
 	}
 
-    /*
-     * ML-KEM results
-     */
-    for (k = 0; k < MLKEM_NUM; k++) {
-        if (!mlkem_doit[k])
-            continue;
-        int bits = (k == 0) ? 768 : 1024;
-        fprintf(stdout,
-            //"mlkem%-4d encap: %8.4fs %8.1f ops/s   decap: %8.4fs %8.1f ops/s\n",
-	    "mlkem%4d encap: %12.8fs %10.1f ops/s   decap: %12.8fs %10.1f ops/s\n",
-            bits,
-            mlkem_results[k][0], 1.0 / mlkem_results[k][0],
-            mlkem_results[k][1], 1.0 / mlkem_results[k][1]);
-    }
+	j = 1;
+	for (k = 0; k < MLKEM_NUM; k++) {
+		int bits = (k == 0) ? 768 : 1024;
+
+		if (!mlkem_doit[k])
+			continue;
+		if (j && !mr) {
+			printf("%30skeygen  keygen/s    encap    encap/s    decap    decap/s\n", " ");
+			j = 0;
+		}
+		if (mr)
+			fprintf(stdout, "+F6:%u:%f:%f:%f:%f:%f:%f\n",
+			    bits,
+			    mlkem_results[k][2], 1.0 / mlkem_results[k][2],
+			    mlkem_results[k][0], 1.0 / mlkem_results[k][0],
+			    mlkem_results[k][1], 1.0 / mlkem_results[k][1]);
+		else
+			fprintf(stdout,
+			    "mlkem%4d %8.4fs %8.1f %8.4fs %8.1f %8.4fs %8.1f\n",
+			    bits,
+			    mlkem_results[k][2], 1.0 / mlkem_results[k][2],
+			    mlkem_results[k][0], 1.0 / mlkem_results[k][0],
+			    mlkem_results[k][1], 1.0 / mlkem_results[k][1]);
+	}
 
 	mret = 0;
 
