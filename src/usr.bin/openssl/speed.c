@@ -2383,78 +2383,55 @@ speed_main(int argc, char **argv)
 		}
 	}
 
-    /*
-     * === MLKEM SPEED TEST ===
-     */
-    for (j = 0; j < MLKEM_NUM; j++) {
-        if (!mlkem_doit[j])
-            continue;
+    	for (j = 0; j < MLKEM_NUM; j++) {
+		if (!mlkem_doit[j]) {
+			continue;
+		}
 
-        int rank = (j == 0) ? MLKEM768_RANK : MLKEM1024_RANK;
+		int rank = (j == 0) ? MLKEM768_RANK : MLKEM1024_RANK;
 
-        MLKEM_private_key *priv = MLKEM_private_key_new(rank);
-        MLKEM_public_key *pub = MLKEM_public_key_new(rank);
-        uint8_t *encoded_pub = NULL;
-        size_t encoded_pub_len = 0;
+		MLKEM_private_key *priv;
+		MLKEM_public_key *pub;
+		uint8_t *encoded_pub = NULL;
+		size_t encoded_pub_len = 0;
 
-        if (priv == NULL || pub == NULL)
-            goto mlkem_err;
+		pkey_print_message("keygen", "mlkem", 
+			   	(j == 0) ? 768 : 1024,
+		    		MLKEM_SECONDS);
+	  	run = 1;
+	     	count = 0;
 
-#if 0
-        /* KeyGen */
-        if (!MLKEM_generate_key(priv,
-            &encoded_pub, &encoded_pub_len,
-            NULL, NULL))
-            goto mlkem_err;
-        if (!MLKEM_parse_public_key(pub, encoded_pub, encoded_pub_len))
-            goto mlkem_err;
+		time_f(START);
 
-        free(encoded_pub);
-        encoded_pub = NULL;
-#endif
+		while (run) {
+	    		MLKEM_private_key *priv_tmp = MLKEM_private_key_new(rank);
+		       	uint8_t *enc_pub_tmp = NULL;
+	    		size_t enc_pub_len_tmp = 0;
 
-	/* === KeyGen test (追加セクション) === */
-        pkey_print_message("keygen", "mlkem", 
-            (j == 0) ? 768 : 1024,
-	    MLKEM_SECONDS);
+	    		if (!MLKEM_generate_key(priv_tmp, &enc_pub_tmp, &enc_pub_len_tmp, NULL, NULL)) {
+				MLKEM_private_key_free(priv_tmp);
+				break;
+	    		}
 
-        run = 1;
-        count = 0;
-
-        // 時間計測開始（time_fは既存の関数を使用）
-        time_f(START);
-
-        while (run) {
-            MLKEM_private_key *priv_tmp = MLKEM_private_key_new(rank);
-            uint8_t *enc_pub_tmp = NULL;
-            size_t enc_pub_len_tmp = 0;
-
-            if (!MLKEM_generate_key(priv_tmp, &enc_pub_tmp, &enc_pub_len_tmp, NULL, NULL)) {
-                MLKEM_private_key_free(priv_tmp);
-                break;
-            }
-
-            // メモリリーク防止のため、生成した鍵を即座に解放
-            MLKEM_private_key_free(priv_tmp);
-            free(enc_pub_tmp);
-            count++;
-        }
-        d = time_f(STOP);
-        mlkem_results[j][2] = d / (double)count; // 結果の保存（配列サイズに注意）
-        BIO_printf(bio_err, "%ld ML-KEM-%d keygen in %.2fs\n", 
-		    	count, (j==0)?768:1024, d);
+	    		MLKEM_private_key_free(priv_tmp);
+	    		free(enc_pub_tmp);
+	    		count++;
+		}
+ 
+	 	d = time_f(STOP);
+		mlkem_results[j][2] = d / (double)count;
+		BIO_printf(bio_err, "%ld ML-KEM-%d keygen in %.2fs\n", 
+				count, (j==0)?768:1024, d);
 	
-        /* * 以降の Encap/Decap テストで使うための「固定の鍵」を1セット用意
-         */
-		
-	priv = MLKEM_private_key_new(rank);
-	pub = MLKEM_public_key_new(rank);
+	
+		priv = MLKEM_private_key_new(rank);
+		pub = MLKEM_public_key_new(rank);
 
-        if (!MLKEM_generate_key(priv, &encoded_pub, &encoded_pub_len, NULL, NULL) ||
-            !MLKEM_parse_public_key(pub, encoded_pub, encoded_pub_len)) {
-            goto mlkem_err;
-        }
-        free(encoded_pub);
+		if (!MLKEM_generate_key(priv, &encoded_pub, &encoded_pub_len, NULL, NULL) ||
+		    		!MLKEM_parse_public_key(pub, encoded_pub, encoded_pub_len)) {
+	    		goto mlkem_err;
+		}
+		free(encoded_pub);
 
         /* === Encap test === */
         pkey_print_message("encap", "mlkem",
@@ -2512,12 +2489,12 @@ speed_main(int argc, char **argv)
 
  mlkem_err:
 	BIO_printf(bio_err, "MLKEM failure\n");
-       	if (priv) MLKEM_private_key_free(priv);
-	if (pub) MLKEM_public_key_free(pub);
-	if (encoded_pub) free(encoded_pub);
+       	MLKEM_private_key_free(priv);
+	MLKEM_public_key_free(pub);
+	free(encoded_pub);
     }
 
-show_res:
+ show_res:
 	if (!mr) {
 		fprintf(stdout, "%s\n", SSLeay_version(SSLEAY_VERSION));
 		fprintf(stdout, "%s\n", SSLeay_version(SSLEAY_BUILT_ON));
