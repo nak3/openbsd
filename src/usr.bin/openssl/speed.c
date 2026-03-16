@@ -1496,6 +1496,7 @@ speed_main(int argc, char **argv)
 			BIO_printf(bio_err, "camellia ");
 #endif
 			BIO_printf(bio_err, "rsa      ");
+			BIO_printf(bio_err, "mlkem    ");
 #ifndef OPENSSL_NO_BF
 			BIO_printf(bio_err, "blowfish");
 #endif
@@ -2387,6 +2388,7 @@ speed_main(int argc, char **argv)
 		int rank = (j == 0) ? MLKEM768_RANK : MLKEM1024_RANK;
 		int bits = (j == 0) ? 768 : 1024;
 		MLKEM_private_key *priv = NULL;
+		MLKEM_private_key *priv_tmp = NULL;
 		MLKEM_public_key *pub = NULL;
 		uint8_t *encoded_pub = NULL;
 		size_t encoded_pub_len = 0;
@@ -2399,7 +2401,6 @@ speed_main(int argc, char **argv)
 		pkey_print_message("keygen", "mlkem", bits, MLKEM_SECONDS);
 		time_f(START);
 		for (count = 0, run = 1; COND; count++) {
-			MLKEM_private_key *priv_tmp;
 			uint8_t *enc_pub_tmp = NULL;
 			size_t enc_pub_len_tmp = 0;
 
