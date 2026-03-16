@@ -240,6 +240,17 @@ static double ecdsa_results[EC_NUM][2];
 static double ecdh_results[EC_NUM][1];
 static double mlkem_results[MLKEM_NUM][3];
 
+struct mlkem_speed_param {
+	const char	*name;
+	int		 bits;
+	int		 rank;
+};
+
+static const struct mlkem_speed_param mlkem_params[MLKEM_NUM] = {
+	[R_MLKEM_768]  = { "mlkem768",  768,  MLKEM768_RANK  },
+	[R_MLKEM_1024] = { "mlkem1024", 1024, MLKEM1024_RANK },
+};
+
 static void sig_done(int sig);
 
 static DSA *
@@ -2385,8 +2396,9 @@ speed_main(int argc, char **argv)
 	}
 
 	for (j = 0; j < MLKEM_NUM; j++) {
-		int rank = (j == 0) ? MLKEM768_RANK : MLKEM1024_RANK;
-		int bits = (j == 0) ? 768 : 1024;
+		const struct mlkem_speed_param *p = &mlkem_params[j];
+		int rank = p->rank;
+		int bits = p->bits;
 		MLKEM_private_key *priv = NULL;
 		MLKEM_private_key *priv_tmp = NULL;
 		MLKEM_public_key *pub = NULL;
@@ -2605,7 +2617,8 @@ speed_main(int argc, char **argv)
 
 	j = 1;
 	for (k = 0; k < MLKEM_NUM; k++) {
-		int bits = (k == 0) ? 768 : 1024;
+		const struct mlkem_speed_param *p = &mlkem_params[k];
+		int bits = p->bits;
 
 		if (!mlkem_doit[k])
 			continue;
