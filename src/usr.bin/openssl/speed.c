@@ -2416,14 +2416,20 @@ speed_main(int argc, char **argv)
 			uint8_t *enc_pub_tmp = NULL;
 			size_t enc_pub_len_tmp = 0;
 
+			/*
+			 * MLKEM_generate_key requires an uninitialized key
+			 * object, so allocate and free on every iteration.
+			 */
 			if ((priv_tmp = MLKEM_private_key_new(rank)) == NULL)
 				break;
 			if (!MLKEM_generate_key(priv_tmp, &enc_pub_tmp,
 			    &enc_pub_len_tmp, NULL, NULL)) {
 				MLKEM_private_key_free(priv_tmp);
+				priv_tmp = NULL;
 				break;
 			}
 			MLKEM_private_key_free(priv_tmp);
+			priv_tmp = NULL;
 			free(enc_pub_tmp);
 		}
 		d = time_f(STOP);
@@ -2501,6 +2507,7 @@ speed_main(int argc, char **argv)
  mlkem_err:
 		BIO_printf(bio_err, "MLKEM failure\n");
 		ERR_print_errors(bio_err);
+		MLKEM_private_key_free(priv_tmp);
 		MLKEM_private_key_free(priv);
 		MLKEM_public_key_free(pub);
 		free(encoded_pub);
