@@ -2603,7 +2603,7 @@ speed_main(int argc, char **argv)
 		if (!mlkem_doit[k])
 			continue;
 		if (j && !mr) {
-			printf("%-9s%10s%9s%10s%9s%10s%9s\n",
+			printf("%-9s%12s%9s%12s%9s%12s%9s\n",
 			    "", "keygen", "keygen/s",
 			    "encap", "encap/s",
 			    "decap", "decap/s");
@@ -2617,7 +2617,7 @@ speed_main(int argc, char **argv)
 			    mlkem_results[k][1], 1.0 / mlkem_results[k][1]);
 		else
 			fprintf(stdout,
-			    "mlkem%4d %8.4fs %8.1f %8.4fs %8.1f %8.4fs %8.1f\n",
+			    "mlkem%4d %10.6fs %8.1f %10.6fs %8.1f %10.6fs %8.1f\n",
 			    bits,
 			    mlkem_results[k][2], 1.0 / mlkem_results[k][2],
 			    mlkem_results[k][0], 1.0 / mlkem_results[k][0],
