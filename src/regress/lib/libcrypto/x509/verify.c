@@ -139,8 +139,9 @@ verify_cert_yolo_cb(int ok, X509_STORE_CTX *xsc)
 
 static void
 verify_cert(const char *roots_dir, const char *roots_file,
-    const char *bundle_file, int *chains, int *error, int *error_depth,
-    int set_depth, int (*verify_cb)(int, X509_STORE_CTX *), int mode)
+    const char *bundle_file, const char *host, int *chains, int *error,
+    int *error_depth, int set_depth,
+    int (*verify_cb)(int, X509_STORE_CTX *), int mode)
 {
 	STACK_OF(X509) *roots = NULL, *bundle = NULL;
 	X509_STORE_CTX *xsc = NULL;
@@ -179,6 +180,10 @@ verify_cert(const char *roots_dir, const char *roots_file,
 		X509_VERIFY_PARAM_set_depth(X509_STORE_CTX_get0_param(xsc),
 		    set_depth);
 	}
+	if (host != NULL &&
+	    !X509_VERIFY_PARAM_set1_host(X509_STORE_CTX_get0_param(xsc),
+	    host, 0))
+		errx(1, "failed to set verify host");
 	if (mode == MODE_LEGACY_VFY)
 		X509_STORE_CTX_set_flags(xsc, X509_V_FLAG_LEGACY_VERIFY);
 	else
@@ -288,6 +293,7 @@ verify_cert_new(const char *roots_file, const char *bundle_file, int *chains,
 struct verify_cert_test {
 	const char *desc;
 	const char *id;
+	const char *host;
 	int (*verify_cb)(int, X509_STORE_CTX *);
 	int want_chains;
 	int want_error;
@@ -302,6 +308,17 @@ struct verify_cert_test verify_cert_tests[] = {
 	{
 		.id = "1a",
 		.want_chains = 1,
+	},
+	{
+		.desc = "1a with hostname mismatch and yolo callback",
+		.id = "1a",
+		.host = "wrong.example",
+		.verify_cb = verify_cert_yolo_cb,
+		.want_chains = 1,
+		.want_error = X509_V_ERR_HOSTNAME_MISMATCH,
+		.want_error_depth = 0,
+		.want_legacy_error = X509_V_ERR_HOSTNAME_MISMATCH,
+		.want_legacy_error_depth = 0,
 	},
 	{
 		.id = "2a",
@@ -587,6 +604,10 @@ verify_cert_test(const char *certs_path, int mode)
 	for (i = 0; i < N_VERIFY_CERT_TESTS; i++) {
 		vct = &verify_cert_tests[i];
 
+		/* Host mismatch cases test X509_verify_cert() callback handling. */
+		if (mode == MODE_VERIFY && vct->host != NULL)
+			continue;
+
 		if (asprintf(&roots_file, "%s/%s/roots.pem", certs_path,
 		    vct->id) == -1)
 			errx(1, "asprintf");
@@ -605,9 +626,9 @@ verify_cert_test(const char *certs_path, int mode)
 			verify_cert_new(roots_file, bundle_file, &chains,
 			    vct->set_depth, vct->verify_cb);
 		else
-			verify_cert(roots_dir, roots_file, bundle_file, &chains,
-			    &error, &error_depth, vct->set_depth, vct->verify_cb,
-			    mode);
+			verify_cert(roots_dir, roots_file, bundle_file,
+			    vct->host, &chains, &error, &error_depth,
+			    vct->set_depth, vct->verify_cb, mode);
 
 		if ((mode == MODE_VERIFY && chains == vct->want_chains) ||
 		    (chains == 0 && vct->want_chains == 0) ||
