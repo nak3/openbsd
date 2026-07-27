@@ -70,6 +70,7 @@
 
 #include "err_local.h"
 #include "ocsp_local.h"
+#include "x509_local.h"
 
 /* OCSP extensions and a couple of CRL entry extensions
  */

@@ -26,6 +26,7 @@
 #include "asn1_local.h"
 #include "bytestring.h"
 #include "err_local.h"
+#include "x509_internal.h"
 
 #define RFC5280 0
 #define GENTIME_LENGTH 15

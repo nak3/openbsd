@@ -19,6 +19,8 @@
 
 #include <openssl/asn1.h>
 
+#include "asn1_local.h"
+
 #define ASN1_ENCODING_CONSTRUCTED_ONLY	1
 #define ASN1_ENCODING_PRIMITIVE_ONLY	2
 

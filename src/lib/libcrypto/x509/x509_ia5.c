@@ -64,6 +64,7 @@
 #include <openssl/x509v3.h>
 
 #include "err_local.h"
+#include "x509_local.h"
 
 static char *i2s_ASN1_IA5STRING(X509V3_EXT_METHOD *method, ASN1_IA5STRING *ia5);
 static ASN1_IA5STRING *s2i_ASN1_IA5STRING(X509V3_EXT_METHOD *method,

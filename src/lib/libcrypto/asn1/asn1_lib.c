@@ -18,6 +18,7 @@
 #include <limits.h>
 #include <stdlib.h>
 
+#include "asn1_local.h"
 #include "bytestring.h"
 
 int

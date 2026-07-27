@@ -60,6 +60,8 @@
 
 #include <openssl/x509v3.h>
 
+#include "x509_local.h"
+
 static const X509V3_EXT_METHOD x509v3_ext_crl_number = {
 	.ext_nid = NID_crl_number,
 	.ext_flags = 0,

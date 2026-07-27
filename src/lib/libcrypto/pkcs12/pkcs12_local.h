@@ -59,6 +59,8 @@
 #ifndef HEADER_PKCS12_LOCAL_H
 #define HEADER_PKCS12_LOCAL_H
 
+#include <openssl/pkcs12.h>
+
 __BEGIN_HIDDEN_DECLS
 
 struct PKCS12_MAC_DATA_st {

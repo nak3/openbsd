@@ -64,6 +64,7 @@
 #include <openssl/asn1t.h>
 #include <openssl/objects.h>
 
+#include "asn1_local.h"
 #include "bytestring.h"
 #include "err_local.h"
 

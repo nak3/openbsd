@@ -3,6 +3,8 @@
 
 #include <openssl/bn.h>
 
+#include "bn_local.h"
+
 /*
  * "First Oakley Default Group" from RFC2409, section 6.1.
  *

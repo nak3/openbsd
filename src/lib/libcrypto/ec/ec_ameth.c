@@ -73,6 +73,7 @@
 
 #include "asn1_local.h"
 #include "bn_local.h"
+#include "ec_local.h"
 #include "err_local.h"
 #include "evp_local.h"
 #include "x509_local.h"

@@ -59,6 +59,8 @@
 #ifndef HEADER_ASN1_LOCAL_H
 #define HEADER_ASN1_LOCAL_H
 
+#include <openssl/asn1.h>
+
 #include "bytestring.h"
 
 __BEGIN_HIDDEN_DECLS

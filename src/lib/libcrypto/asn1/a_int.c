@@ -65,6 +65,7 @@
 #include <openssl/bn.h>
 #include <openssl/buffer.h>
 
+#include "asn1_local.h"
 #include "bytestring.h"
 #include "err_local.h"
 

@@ -65,6 +65,7 @@
 #include <openssl/crypto.h>
 #include <openssl/x509.h>
 
+#include "conf_local.h"
 #include "err_local.h"
 
 /* This structure contains data about supported modules. */

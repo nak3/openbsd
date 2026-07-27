@@ -65,6 +65,7 @@
 #include <openssl/x509v3.h>
 
 #include "err_local.h"
+#include "x509_local.h"
 
 static STACK_OF(CONF_VALUE) *i2v_AUTHORITY_INFO_ACCESS(
     X509V3_EXT_METHOD *method, AUTHORITY_INFO_ACCESS *ainfo,

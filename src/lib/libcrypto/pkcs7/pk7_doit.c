@@ -66,6 +66,8 @@
 
 #include "err_local.h"
 #include "evp_local.h"
+/* XXX - for PKCS7_get_octet_string(), which belongs in pkcs7_local.h. */
+#include "pkcs12_local.h"
 #include "x509_local.h"
 
 static int

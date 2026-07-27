@@ -63,6 +63,7 @@
 
 #include "err_local.h"
 #include "evp_local.h"
+#include "pkcs12_local.h"
 
 /* Encrypt/Decrypt a buffer based on password and algor, result in a
  * malloc'ed buffer

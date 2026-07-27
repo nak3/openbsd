@@ -64,6 +64,7 @@
 #include <openssl/rsa.h>
 
 #include "err_local.h"
+#include "rsa_local.h"
 
 int
 RSA_padding_add_X931(unsigned char *to, int tlen, const unsigned char *from,

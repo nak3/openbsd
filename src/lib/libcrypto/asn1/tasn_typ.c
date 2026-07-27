@@ -59,6 +59,8 @@
 #include <openssl/asn1.h>
 #include <openssl/asn1t.h>
 
+#include "asn1_local.h"
+
 /* Declarations for string types */
 
 const ASN1_ITEM ASN1_NULL_it = {

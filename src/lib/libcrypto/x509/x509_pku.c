@@ -62,6 +62,8 @@
 #include <openssl/asn1t.h>
 #include <openssl/x509v3.h>
 
+#include "x509_local.h"
+
 static int i2r_PKEY_USAGE_PERIOD(X509V3_EXT_METHOD *method,
     PKEY_USAGE_PERIOD *usage, BIO *out, int indent);
 

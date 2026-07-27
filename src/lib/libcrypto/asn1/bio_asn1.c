@@ -67,6 +67,7 @@
 #include <openssl/bio.h>
 #include <openssl/asn1.h>
 
+#include "asn1_local.h"
 #include "bio_local.h"
 
 #define BIO_C_SET_PREFIX			149

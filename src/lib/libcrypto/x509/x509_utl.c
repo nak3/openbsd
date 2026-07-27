@@ -69,6 +69,7 @@
 #include "bytestring.h"
 #include "conf_local.h"
 #include "err_local.h"
+#include "x509_local.h"
 
 /*
  * Match reference identifiers starting with "." to any sub-domain. This

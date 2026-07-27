@@ -55,6 +55,7 @@
 #include <openssl/crypto.h>
 #include <openssl/modes.h>
 
+#include "aes_local.h"
 #include "crypto_arch.h"
 #include "crypto_internal.h"
 #include "modes_local.h"

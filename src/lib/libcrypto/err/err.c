@@ -122,6 +122,9 @@
 #include <openssl/err.h>
 #include <openssl/lhash.h>
 
+#include "constant_time.h"
+#include "err_local.h"
+
 DECLARE_LHASH_OF(ERR_STRING_DATA);
 DECLARE_LHASH_OF(ERR_STATE);
 

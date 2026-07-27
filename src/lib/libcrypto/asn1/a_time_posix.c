@@ -30,6 +30,7 @@
 #include <openssl/asn1.h>
 #include <openssl/posix_time.h>
 
+#include "asn1_local.h"
 #include "crypto_internal.h"
 
 #define SECS_PER_HOUR (int64_t)(60 * 60)
