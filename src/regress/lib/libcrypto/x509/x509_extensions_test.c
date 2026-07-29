@@ -907,12 +907,29 @@ test_x509v3_get_d2i(void)
 	return failed;
 }
 
+static int
+test_x509v3_ext_get_nid(void)
+{
+#ifndef OPENSSL_NO_OCSP
+	const X509V3_EXT_METHOD *method;
+
+	if ((method = X509V3_EXT_get_nid(NID_id_pkix_OCSP_noCheck)) == NULL) {
+		fprintf(stderr, "FAIL: %s: OCSP no-check method not found\n",
+		    __func__);
+		return 1;
+	}
+#endif
+
+	return 0;
+}
+
 int
 main(void)
 {
 	int failed = 0;
 
 	failed |= test_x509v3_add1_i2d();
+	failed |= test_x509v3_ext_get_nid();
 	failed |= test_x509v3_get_d2i();
 
 	return failed;

@@ -108,6 +108,8 @@ X509V3_EXT_get_nid(int nid)
 		return x509v3_ext_method_id_pkix_OCSP_acceptableResponses();
 	case NID_id_pkix_OCSP_archiveCutoff:
 		return x509v3_ext_method_id_pkix_OCSP_archiveCutoff();
+	case NID_id_pkix_OCSP_noCheck:
+		return x509v3_ext_method_id_pkix_OCSP_noCheck();
 	case NID_id_pkix_OCSP_serviceLocator:
 		return x509v3_ext_method_id_pkix_OCSP_serviceLocator();
 #endif

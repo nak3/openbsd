@@ -472,6 +472,7 @@ const X509V3_EXT_METHOD *x509v3_ext_method_id_pkix_OCSP_CrlID(void);
 const X509V3_EXT_METHOD *x509v3_ext_method_id_pkix_OCSP_Nonce(void);
 const X509V3_EXT_METHOD *x509v3_ext_method_id_pkix_OCSP_acceptableResponses(void);
 const X509V3_EXT_METHOD *x509v3_ext_method_id_pkix_OCSP_archiveCutoff(void);
+const X509V3_EXT_METHOD *x509v3_ext_method_id_pkix_OCSP_noCheck(void);
 const X509V3_EXT_METHOD *x509v3_ext_method_id_pkix_OCSP_serviceLocator(void);
 const X509V3_EXT_METHOD *x509v3_ext_method_info_access(void);
 const X509V3_EXT_METHOD *x509v3_ext_method_inhibit_any_policy(void);
