@@ -61,6 +61,9 @@
 
 __BEGIN_HIDDEN_DECLS
 
+int OpenSSL_config(const char *config_name);
+int OpenSSL_no_config(void);
+
 const CONF_METHOD *NCONF_default(void);
 
 struct conf_method_st {

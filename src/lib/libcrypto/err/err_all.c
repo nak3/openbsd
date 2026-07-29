@@ -95,7 +95,7 @@
 #include <openssl/rsa.h>
 #endif
 
-void ERR_load_ERR_strings_internal(void);
+#include "err_local.h"
 
 static void
 ERR_load_crypto_strings_internal(void)

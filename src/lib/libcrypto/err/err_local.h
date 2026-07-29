@@ -116,6 +116,7 @@
 
 __BEGIN_HIDDEN_DECLS
 
+void ERR_load_ERR_strings_internal(void);
 void ERR_load_const_strings(const ERR_STRING_DATA *str);
 
 #define ERR_PUT_ERROR(l, r) ERR_PUT_error((l), 0xfff, (r), OPENSSL_FILE, OPENSSL_LINE)

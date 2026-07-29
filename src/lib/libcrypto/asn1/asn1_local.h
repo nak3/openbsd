@@ -67,6 +67,13 @@ __BEGIN_HIDDEN_DECLS
 
 /* Internal ASN1 structures and functions: not for application use */
 
+void ASN1_add_oid_module(void);
+
+int BIO_asn1_set_prefix(BIO *b, asn1_ps_func *prefix,
+    asn1_ps_func *prefix_free);
+int BIO_asn1_set_suffix(BIO *b, asn1_ps_func *suffix,
+    asn1_ps_func *suffix_free);
+
 ASN1_TYPE *ASN1_TYPE_pack_sequence(const ASN1_ITEM *it, void *s, ASN1_TYPE **t);
 void *ASN1_TYPE_unpack_sequence(const ASN1_ITEM *it, const ASN1_TYPE *t);
 

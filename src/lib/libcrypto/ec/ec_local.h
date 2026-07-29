@@ -190,6 +190,8 @@ const EC_METHOD *EC_GFp_simple_method(void);
 const EC_METHOD *EC_GFp_mont_method(void);
 const EC_METHOD *EC_GFp_homogeneous_projective_method(void);
 
+EC_GROUP *EC_GROUP_new(const EC_METHOD *meth);
+
 /* Compute r = scalar1 * point1 + scalar2 * point2 in non-constant time. */
 int ec_wnaf_mul(const EC_GROUP *group, EC_POINT *r, const BIGNUM *scalar1,
     const EC_POINT *point1, const BIGNUM *scalar2, const EC_POINT *point2,

@@ -61,9 +61,6 @@
 #include "asn1_local.h"
 #include "err_local.h"
 
-int BIO_asn1_set_prefix(BIO *b, asn1_ps_func *prefix, asn1_ps_func *prefix_free);
-int BIO_asn1_set_suffix(BIO *b, asn1_ps_func *suffix, asn1_ps_func *suffix_free);
-
 /* Experimental NDEF ASN1 BIO support routines */
 
 /* The usage is quite simple, initialize an ASN1 structure,

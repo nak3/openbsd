@@ -26,12 +26,10 @@
 #include <openssl/objects.h>
 #include <openssl/x509v3.h>
 
+#include "conf_local.h"
 #include "crypto_internal.h"
 #include "err_local.h"
 #include "x509_issuer_cache.h"
-
-int OpenSSL_config(const char *);
-int OpenSSL_no_config(void);
 
 static pthread_once_t crypto_init_once = PTHREAD_ONCE_INIT;
 static pthread_t crypto_init_thread;

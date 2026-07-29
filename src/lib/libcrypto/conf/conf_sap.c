@@ -67,6 +67,7 @@
 #include <openssl/err.h>
 #include <openssl/x509.h>
 
+#include "asn1_local.h"
 #include "conf_local.h"
 
 /* This is the automatic configuration loader: it is called automatically by
@@ -77,8 +78,6 @@
 static pthread_once_t openssl_configured = PTHREAD_ONCE_INIT;
 
 static const char *openssl_config_name;
-
-void ASN1_add_oid_module(void);
 
 static void
 OPENSSL_config_internal(void)

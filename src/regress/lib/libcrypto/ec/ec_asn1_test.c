@@ -31,8 +31,6 @@
 
 #include "ec_local.h"
 
-EC_GROUP *EC_GROUP_new(const EC_METHOD *);
-
 /* set to 0 if/when we are going to enforce 0 <= a,b < p. */
 #define NEGATIVE_CURVE_COEFFICIENTS_ALLOWED	1
 
