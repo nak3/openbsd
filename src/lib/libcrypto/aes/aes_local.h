@@ -63,8 +63,37 @@ __BEGIN_HIDDEN_DECLS
 /* This controls loop-unrolling in aes_core.c */
 #undef FULL_UNROLL
 
+int aes_set_encrypt_key_generic(const unsigned char *userKey, const int bits,
+    AES_KEY *key);
+int aes_set_encrypt_key_internal(const unsigned char *userKey, const int bits,
+    AES_KEY *key);
+int aes_set_decrypt_key_generic(const unsigned char *userKey, const int bits,
+    AES_KEY *key);
+int aes_set_decrypt_key_internal(const unsigned char *userKey, const int bits,
+    AES_KEY *key);
+
+void aes_encrypt_generic(const unsigned char *in, unsigned char *out,
+    const AES_KEY *key);
+void aes_encrypt_internal(const unsigned char *in, unsigned char *out,
+    const AES_KEY *key);
+void aes_decrypt_generic(const unsigned char *in, unsigned char *out,
+    const AES_KEY *key);
+void aes_decrypt_internal(const unsigned char *in, unsigned char *out,
+    const AES_KEY *key);
+
 void aes_encrypt_block128(const unsigned char *in, unsigned char *out,
    const void *key);
+
+void aes_cbc_encrypt_generic(const unsigned char *in, unsigned char *out,
+    size_t len, const AES_KEY *key, unsigned char *ivec, const int enc);
+void aes_ccm64_encrypt_generic(const unsigned char *in, unsigned char *out,
+    size_t blocks, const void *key, const unsigned char ivec[16],
+    unsigned char cmac[16], int encrypt);
+void aes_ctr32_encrypt_generic(const unsigned char *in, unsigned char *out,
+    size_t blocks, const AES_KEY *key, const unsigned char ivec[AES_BLOCK_SIZE]);
+void aes_xts_encrypt_generic(const unsigned char *in, unsigned char *out,
+    size_t len, const AES_KEY *key1, const AES_KEY *key2,
+    const unsigned char iv[16], int encrypt);
 
 void aes_ctr32_encrypt_ctr128f(const unsigned char *in, unsigned char *out,
     size_t blocks, const void *key, const unsigned char ivec[AES_BLOCK_SIZE]);

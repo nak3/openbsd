@@ -64,15 +64,6 @@ static const unsigned char aes_wrap_default_iv[] = {
 	0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6,
 };
 
-int aes_set_encrypt_key_internal(const unsigned char *userKey, const int bits,
-    AES_KEY *key);
-int aes_set_decrypt_key_internal(const unsigned char *userKey, const int bits,
-    AES_KEY *key);
-void aes_encrypt_internal(const unsigned char *in, unsigned char *out,
-    const AES_KEY *key);
-void aes_decrypt_internal(const unsigned char *in, unsigned char *out,
-    const AES_KEY *key);
-
 static int
 aes_rounds_for_key_length(int bits)
 {
