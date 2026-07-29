@@ -1379,7 +1379,7 @@ ssl3_clear(SSL *s)
 	s->s3->hs.state = SSL_ST_BEFORE|((s->server) ? SSL_ST_ACCEPT : SSL_ST_CONNECT);
 }
 
-long
+static long
 _SSL_get_shared_group(SSL *s, long n)
 {
 	size_t count;
@@ -1412,7 +1412,7 @@ _SSL_get_shared_group(SSL *s, long n)
 	return nid;
 }
 
-long
+static long
 _SSL_get_peer_tmp_key(SSL *s, EVP_PKEY **key)
 {
 	EVP_PKEY *pkey = NULL;

@@ -96,7 +96,7 @@ tls13_client_hello_is_legacy(CBS *cbs)
 	return (max_version < TLS1_3_VERSION);
 }
 
-int
+static int
 tls13_client_hello_required_extensions(struct tls13_ctx *ctx)
 {
 	SSL *s = ctx->ssl;

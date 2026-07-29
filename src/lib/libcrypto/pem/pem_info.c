@@ -77,7 +77,7 @@
 #include "err_local.h"
 #include "evp_local.h"
 
-X509_PKEY *
+static X509_PKEY *
 X509_PKEY_new(void)
 {
 	X509_PKEY *x_pkey;
@@ -90,7 +90,7 @@ X509_PKEY_new(void)
 	return x_pkey;
 }
 
-void
+static void
 X509_PKEY_free(X509_PKEY *x_pkey)
 {
 	if (x_pkey == NULL)

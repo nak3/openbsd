@@ -158,7 +158,7 @@ DECLARE_STACK_OF(X509_POLICY_LEVEL)
  * this the OpenSSL way either, and we are not using this boringsslism
  * anywhere else. Callers should ensure that the stack in data is sorted.
  */
-void
+static void
 sk_X509_POLICY_NODE_delete_if(STACK_OF(X509_POLICY_NODE) *nodes,
     int (*delete_if)(X509_POLICY_NODE *, void *), void *data)
 {

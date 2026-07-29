@@ -136,7 +136,7 @@ aes_encrypt_block128(const unsigned char *in, unsigned char *out, const void *ke
 	aes_encrypt_internal(in, out, key);
 }
 
-void
+static void
 aes_decrypt_block128(const unsigned char *in, unsigned char *out, const void *key)
 {
 	aes_decrypt_internal(in, out, key);

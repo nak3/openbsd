@@ -2567,7 +2567,7 @@ tlsext_build(SSL *s, int is_server, uint16_t msg_type, CBB *cbb)
 	return 1;
 }
 
-int
+static int
 tlsext_clienthello_hash_extension(SSL *s, uint16_t type, CBS *cbs)
 {
 	/*

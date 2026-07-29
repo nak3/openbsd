@@ -400,7 +400,7 @@ ocsp_request_new_from_cert(const char *cadir, char *file, int nonce)
 }
 
 
-int
+static int
 validate_response(char *buf, size_t size, ocsp_request *request,
     X509_STORE *store, char *host, char *file)
 {

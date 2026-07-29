@@ -31,13 +31,13 @@ struct tls13_record_protection {
 	uint8_t seq_num[TLS13_RECORD_SEQ_NUM_LEN];
 };
 
-struct tls13_record_protection *
+static struct tls13_record_protection *
 tls13_record_protection_new(void)
 {
 	return calloc(1, sizeof(struct tls13_record_protection));
 }
 
-void
+static void
 tls13_record_protection_clear(struct tls13_record_protection *rp)
 {
 	EVP_AEAD_CTX_free(rp->aead_ctx);
@@ -48,7 +48,7 @@ tls13_record_protection_clear(struct tls13_record_protection *rp)
 	memset(rp, 0, sizeof(*rp));
 }
 
-void
+static void
 tls13_record_protection_free(struct tls13_record_protection *rp)
 {
 	if (rp == NULL)
