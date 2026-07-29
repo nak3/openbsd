@@ -6,6 +6,8 @@
 
 #include <string.h>
 
+void __explicit_bzero_hook(void *, size_t);
+
 __attribute__((weak)) void
 __explicit_bzero_hook(void *buf, size_t len)
 {
