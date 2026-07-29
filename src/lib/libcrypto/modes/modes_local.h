@@ -29,6 +29,8 @@ typedef struct {
 	uint64_t hi, lo;
 } u128;
 
+void gcm_init_4bit(u128 Htable[16], uint64_t H[2]);
+
 struct gcm128_context {
 	/* Following 6 names follow names in GCM specification */
 	union {

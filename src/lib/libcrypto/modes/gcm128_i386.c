@@ -18,8 +18,6 @@
 #include "crypto_arch.h"
 #include "modes_local.h"
 
-void gcm_init_4bit(u128 Htable[16], uint64_t H[2]);
-
 void gcm_gmult_4bit_mmx(uint64_t Xi[2], const u128 Htable[16]);
 void gcm_ghash_4bit_mmx(uint64_t Xi[2], const u128 Htable[16], const uint8_t *inp,
     size_t len);
