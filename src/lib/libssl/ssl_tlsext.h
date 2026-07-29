@@ -31,6 +31,21 @@
 
 __BEGIN_HIDDEN_DECLS
 
+struct tls_extension;
+
+struct tls_extension_funcs {
+	int (*needs)(SSL *s, uint16_t msg_type);
+	int (*build)(SSL *s, uint16_t msg_type, CBB *cbb);
+	int (*process)(SSL *s, uint16_t msg_type, CBS *cbs, int *alert);
+};
+
+uint16_t tls_extension_type(const struct tls_extension *extension);
+const struct tls_extension *tls_extension_find(uint16_t type,
+    size_t *tls_extensions_idx);
+const struct tls_extension_funcs *tlsext_funcs(
+    const struct tls_extension *tlsext, int is_server);
+int tlsext_linearize_build_order(SSL *s);
+
 int tlsext_alpn_check_format(CBS *cbs);
 int tlsext_sni_is_valid_hostname(CBS *cbs, int *is_ip);
 

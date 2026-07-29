@@ -27,18 +27,6 @@
 #include "bytestring.h"
 #include "ssl_tlsext.h"
 
-struct tls_extension_funcs {
-	int (*needs)(SSL *s, uint16_t msg_type);
-	int (*build)(SSL *s, uint16_t msg_type, CBB *cbb);
-	int (*process)(SSL *s, uint16_t msg_type, CBS *cbs, int *alert);
-};
-
-uint16_t tls_extension_type(const struct tls_extension *);
-const struct tls_extension *tls_extension_find(uint16_t, size_t *);
-const struct tls_extension_funcs *tlsext_funcs(const struct tls_extension *,
-    int);
-int tlsext_linearize_build_order(SSL *);
-
 static int
 tls_extension_funcs(int type, const struct tls_extension_funcs **client_funcs,
     const struct tls_extension_funcs **server_funcs)

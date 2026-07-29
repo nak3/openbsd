@@ -198,6 +198,7 @@ struct tls13_record_layer_callbacks {
 struct tls13_record_layer *tls13_record_layer_new(
     const struct tls13_record_layer_callbacks *callbacks, void *cb_arg);
 void tls13_record_layer_free(struct tls13_record_layer *rl);
+int tls13_record_layer_inc_seq_num(uint8_t *seq_num);
 void tls13_record_layer_set_callbacks(struct tls13_record_layer *rl,
     const struct tls13_record_layer_callbacks *callbacks, void *cb_arg);
 void tls13_record_layer_allow_ccs(struct tls13_record_layer *rl, int allow);

@@ -613,6 +613,8 @@ int tls12_key_block_generate(struct tls12_key_block *kb, SSL *s,
 
 struct tls12_record_layer;
 
+int tls12_record_layer_inc_seq_num(struct tls12_record_layer *rl,
+    uint8_t *seq_num);
 struct tls12_record_layer *tls12_record_layer_new(void);
 void tls12_record_layer_free(struct tls12_record_layer *rl);
 void tls12_record_layer_alert(struct tls12_record_layer *rl,

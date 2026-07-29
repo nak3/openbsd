@@ -2163,12 +2163,6 @@ tlsext_quic_transport_parameters_server_process(SSL *s, uint16_t msg_type,
 	return 1;
 }
 
-struct tls_extension_funcs {
-	int (*needs)(SSL *s, uint16_t msg_type);
-	int (*build)(SSL *s, uint16_t msg_type, CBB *cbb);
-	int (*process)(SSL *s, uint16_t msg_type, CBS *cbs, int *alert);
-};
-
 struct tls_extension {
 	uint16_t type;
 	uint16_t messages;

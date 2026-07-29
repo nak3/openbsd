@@ -22,10 +22,6 @@
 #include "tls13_internal.h"
 #include "tls13_record.h"
 
-int tls12_record_layer_inc_seq_num(struct tls12_record_layer *rl,
-    uint8_t *seq_num);
-int tls13_record_layer_inc_seq_num(uint8_t *seq_num);
-
 static void
 hexdump(const unsigned char *buf, size_t len)
 {

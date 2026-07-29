@@ -24,6 +24,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "bytestring.h"
+#include "ssl_tlsext.h"
+
 #define DTLS_HM_OFFSET (DTLS1_RT_HEADER_LENGTH + DTLS1_HM_HEADER_LENGTH)
 #define DTLS_RANDOM_OFFSET (DTLS_HM_OFFSET + 2)
 #define DTLS_CIPHER_OFFSET (DTLS_HM_OFFSET + 38)
@@ -40,8 +43,6 @@
 #define TLS13_ONLY_KEY_SHARE_OFFSET (TLS13_HM_OFFSET + 114)
 
 #define TLS1_3_VERSION_ONLY (TLS1_3_VERSION | 0x10000)
-
-int tlsext_linearize_build_order(SSL *);
 
 static const uint8_t cipher_list_dtls1[] = {
 	0xc0, 0x14, 0xc0, 0x0a, 0x00, 0x39, 0xff, 0x85,
