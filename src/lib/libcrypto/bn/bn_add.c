@@ -86,9 +86,11 @@ bn_add(BN_ULONG *r, int r_len, const BN_ULONG *a, int a_len, const BN_ULONG *b,
 
 	carry = bn_add_words(r, a, b, min_len);
 
-	a += min_len;
-	b += min_len;
-	r += min_len;
+	if (min_len > 0) {
+		a += min_len;
+		b += min_len;
+		r += min_len;
+	}
 
 	/* XXX - consider doing four at a time to match bn_add_words(). */
 	while (diff_len < 0) {
@@ -133,9 +135,11 @@ bn_sub(BN_ULONG *r, int r_len, const BN_ULONG *a, int a_len, const BN_ULONG *b,
 
 	borrow = bn_sub_words(r, a, b, min_len);
 
-	a += min_len;
-	b += min_len;
-	r += min_len;
+	if (min_len > 0) {
+		a += min_len;
+		b += min_len;
+		r += min_len;
+	}
 
 	/* XXX - consider doing four at a time to match bn_sub_words. */
 	while (diff_len < 0) {

@@ -448,7 +448,9 @@ i2t_ASN1_OBJECT_internal(const ASN1_OBJECT *aobj, char *buf, int buf_len, int no
 	if (!CBB_finish(&cbb, &data, &data_len))
 		goto err;
 
-	ret = strlcpy(buf, data, buf_len);
+	ret = (int)data_len - 1;
+	if (buf_len > 0)
+		strlcpy(buf, data, buf_len);
  err:
 	CBB_cleanup(&cbb);
 	free(data);

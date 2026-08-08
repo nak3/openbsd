@@ -100,6 +100,9 @@ bn_bn2binpad_internal(const BIGNUM *bn, uint8_t *out, int out_len,
 	if (out_len < n)
 		return -1;
 
+	if (out_len == 0)
+		return 0;
+
 	if (bn->dmax == 0) {
 		explicit_bzero(out, out_len);
 		return out_len;
