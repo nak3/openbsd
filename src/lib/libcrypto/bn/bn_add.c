@@ -86,11 +86,9 @@ bn_add(BN_ULONG *r, int r_len, const BN_ULONG *a, int a_len, const BN_ULONG *b,
 
 	carry = bn_add_words(r, a, b, min_len);
 
-	if (min_len > 0) {
-		a += min_len;
-		b += min_len;
-		r += min_len;
-	}
+	a += min_len;
+	b += min_len;
+	r += min_len;
 
 	/* XXX - consider doing four at a time to match bn_add_words(). */
 	while (diff_len < 0) {
@@ -135,11 +133,9 @@ bn_sub(BN_ULONG *r, int r_len, const BN_ULONG *a, int a_len, const BN_ULONG *b,
 
 	borrow = bn_sub_words(r, a, b, min_len);
 
-	if (min_len > 0) {
-		a += min_len;
-		b += min_len;
-		r += min_len;
-	}
+	a += min_len;
+	b += min_len;
+	r += min_len;
 
 	/* XXX - consider doing four at a time to match bn_sub_words. */
 	while (diff_len < 0) {
@@ -173,6 +169,20 @@ BN_uadd(BIGNUM *r, const BIGNUM *a, const BIGNUM *b)
 		rn = b->top;
 	if (rn == INT_MAX)
 		return 0;
+
+	if (a->top == 0) {
+		if (!bn_copy(r, b))
+			return 0;
+		r->neg = 0;
+		return 1;
+	}
+	if (b->top == 0) {
+		if (!bn_copy(r, a))
+			return 0;
+		r->neg = 0;
+		return 1;
+	}
+
 	if (!bn_wexpand(r, rn + 1))
 		return 0;
 
@@ -196,6 +206,14 @@ BN_usub(BIGNUM *r, const BIGNUM *a, const BIGNUM *b)
 		BNerror(BN_R_ARG2_LT_ARG3);
 		return 0;
 	}
+
+	if (b->top == 0) {
+		if (!bn_copy(r, a))
+			return 0;
+		r->neg = 0;
+		return 1;
+	}
+
 	rn = a->top;
 
 	if (!bn_wexpand(r, rn))
