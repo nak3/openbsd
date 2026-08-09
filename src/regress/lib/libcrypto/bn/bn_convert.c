@@ -62,7 +62,7 @@ check_bin_output(size_t test_no, const char *label, const uint8_t *bin,
 		    "want %d\n", test_no, label, ret, out_len);
 		goto failure;
 	}
-	if (bin_len > 0 && memcmp(out, bin, bin_len) != 0) {
+	if (out_len > 0 && memcmp(out, bin, bin_len) != 0) {
 		fprintf(stderr, "FAIL: Test %zu %s - output from "
 		    "BN_bn2bin() differs\n", test_no, label);
 		fprintf(stderr, "Got:\n");
