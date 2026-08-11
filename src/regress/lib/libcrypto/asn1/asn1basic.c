@@ -281,6 +281,21 @@ asn1_bit_string_set_bit_test(void)
 		goto failed;
 	}
 
+	/* Clearing a bit in an invalid string fails. */
+
+	ASN1_STRING_set0(abs, NULL, 1);
+	if (ASN1_BIT_STRING_set_bit(abs, 0, 0)) {
+		fprintf(stderr, "FAIL: invalid BIT STRING clear unexpectedly "
+		    "succeeded\n");
+		goto failed;
+	}
+	if (ASN1_BIT_STRING_set_bit(abs, 0, 1)) {
+		fprintf(stderr, "FAIL: invalid BIT STRING set unexpectedly "
+		    "succeeded\n");
+		goto failed;
+	}
+	ASN1_STRING_set0(abs, NULL, 0);
+
 	/*
 	 * Now set a few bits via ASN1_BIT_STRING_set_bit()
 	 */

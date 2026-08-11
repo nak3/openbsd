@@ -160,6 +160,10 @@ ASN1_BIT_STRING_set_bit(ASN1_BIT_STRING *a, int n, int value)
 		return 0;
 	if (n < 0)
 		return 0;
+	if (a->length < 0)
+		return 0;
+	if (a->data == NULL && a->length != 0)
+		return 0;
 
 	w = n / 8;
 	v = 1 << (7 - (n & 0x07));
