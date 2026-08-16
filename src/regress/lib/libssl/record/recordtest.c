@@ -15,8 +15,16 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <sys/resource.h>
+#include <sys/time.h>
+
 #include <err.h>
+#include <signal.h>
+#include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <unistd.h>
 
 #include <openssl/ssl.h>
 
@@ -543,13 +551,154 @@ test_send_records(void)
 	return failed;
 }
 
+static volatile sig_atomic_t benchmark_stop;
+static volatile uint64_t benchmark_sink;
+
+typedef void (*benchmark_run_once_cb)(unsigned long long, void *);
+
+static void
+benchmark_sig_alarm(int sig)
+{
+	(void)sig;
+	benchmark_stop = 1;
+}
+
+static ssize_t
+benchmark_write_cb(const void *buf, size_t len, void *arg)
+{
+	const uint8_t *data = buf;
+
+	(void)arg;
+	if (len > 0)
+		benchmark_sink += data[0] + data[len - 1];
+
+	return len;
+}
+
+static void
+benchmark_record_send_once(unsigned long long iteration, void *arg)
+{
+	struct tls13_record *rec;
+	uint8_t *data;
+
+	(void)arg;
+
+	if ((rec = tls13_record_new()) == NULL)
+		errx(1, "tls13_record_new");
+	if ((data = malloc(TLS13_RECORD_MAX_LEN)) == NULL)
+		errx(1, "malloc");
+
+	data[0] = SSL3_RT_APPLICATION_DATA;
+	data[TLS13_RECORD_MAX_LEN - 1] = iteration;
+
+	if (!tls13_record_set_data(rec, data, TLS13_RECORD_MAX_LEN))
+		errx(1, "tls13_record_set_data");
+	if (tls13_record_send(rec, benchmark_write_cb, NULL) !=
+	    TLS13_RECORD_MAX_LEN)
+		errx(1, "tls13_record_send");
+
+	tls13_record_free(rec);
+}
+
+static void
+benchmark_record_recv_once(unsigned long long iteration, void *arg)
+{
+	struct rw_state *rs = arg;
+	struct tls13_record *rec;
+	CBS cbs;
+
+	(void)iteration;
+
+	rs->offset = 0;
+	rs->eof = 0;
+
+	if ((rec = tls13_record_new()) == NULL)
+		errx(1, "tls13_record_new");
+	if (tls13_record_recv(rec, read_cb, rs) != TLS13_RECORD_MAX_LEN)
+		errx(1, "tls13_record_recv");
+
+	tls13_record_data(rec, &cbs);
+	if (CBS_len(&cbs) != TLS13_RECORD_MAX_LEN)
+		errx(1, "tls13_record_data");
+	benchmark_sink += CBS_data(&cbs)[0] +
+	    CBS_data(&cbs)[CBS_len(&cbs) - 1];
+
+	tls13_record_free(rec);
+}
+
+static void
+benchmark_run(const char *description, benchmark_run_once_cb run_once,
+    void *arg, int seconds)
+{
+	struct timespec start, end, duration;
+	struct rusage rusage;
+	uint64_t elapsed_ns;
+	unsigned long long iterations = 0;
+
+	signal(SIGALRM, benchmark_sig_alarm);
+	benchmark_stop = 0;
+	benchmark_sink = 0;
+	alarm(seconds);
+
+	if (getrusage(RUSAGE_SELF, &rusage) == -1)
+		err(1, "getrusage failed");
+	TIMEVAL_TO_TIMESPEC(&rusage.ru_utime, &start);
+
+	while (!benchmark_stop) {
+		run_once(iterations, arg);
+		iterations++;
+	}
+
+	if (getrusage(RUSAGE_SELF, &rusage) == -1)
+		err(1, "getrusage failed");
+	TIMEVAL_TO_TIMESPEC(&rusage.ru_utime, &end);
+	timespecsub(&end, &start, &duration);
+
+	elapsed_ns = duration.tv_sec * 1000000000ULL + duration.tv_nsec;
+	fprintf(stderr, "%s: %llu records in %f seconds - %.1f ns/record "
+	    "- %llu records/s (sink %llu)\n", description, iterations,
+	    elapsed_ns / 1000000000.0, (double)elapsed_ns / iterations,
+	    iterations * 1000000000ULL / elapsed_ns,
+	    (unsigned long long)benchmark_sink);
+}
+
+static void
+benchmark_records(int seconds)
+{
+	struct rw_state rs = { 0 };
+	uint8_t *data;
+
+	if ((data = calloc(1, TLS13_RECORD_MAX_LEN)) == NULL)
+		errx(1, "calloc");
+
+	data[0] = SSL3_RT_APPLICATION_DATA;
+	data[1] = TLS1_2_VERSION >> 8;
+	data[2] = TLS1_2_VERSION & 0xff;
+	data[3] = TLS13_RECORD_MAX_CIPHERTEXT_LEN >> 8;
+	data[4] = TLS13_RECORD_MAX_CIPHERTEXT_LEN & 0xff;
+
+	rs.buf = data;
+	rs.len = TLS13_RECORD_MAX_LEN;
+
+	benchmark_run("send", benchmark_record_send_once, NULL, seconds);
+	benchmark_run("recv", benchmark_record_recv_once, &rs, seconds);
+
+	free(data);
+}
+
 int
 main(int argc, char **argv)
 {
-	int failed = 0;
+	int benchmark = 0, failed = 0;
+
+	if (argc == 2 && strcmp(argv[1], "--benchmark") == 0)
+		benchmark = 1;
 
 	failed |= test_recv_records();
 	failed |= test_send_records();
+
+	if (benchmark && !failed)
+		benchmark_records(5);
 
 	return failed;
 }

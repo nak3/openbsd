@@ -7,4 +7,8 @@ WARNINGS=	Yes
 CFLAGS+=	-DLIBRESSL_INTERNAL -Wall -Wundef -Werror
 CFLAGS+=	-I${.CURDIR}/../../../../lib/libssl
 
+benchmark: recordtest
+	./recordtest --benchmark
+.PHONY: benchmark
+
 .include <bsd.regress.mk>
