@@ -337,9 +337,8 @@ main(void)
 		ERR_print_errors_fp(stdout);
 	}
 
-	CRYPTO_cleanup_all_ex_data();
 	ERR_remove_thread_state(NULL);
-	ERR_free_strings();
+	OPENSSL_cleanup();
 
 	return failed;
 }

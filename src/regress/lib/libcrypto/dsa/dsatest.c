@@ -193,11 +193,10 @@ end:
 	if (!ret)
 		ERR_print_errors(bio_err);
 	DSA_free(dsa);
-	CRYPTO_cleanup_all_ex_data();
-	ERR_remove_thread_state(NULL);
-	ERR_free_strings();
 	BIO_free(bio_err);
 	bio_err = NULL;
+	ERR_remove_thread_state(NULL);
+	OPENSSL_cleanup();
 
 	return !ret;
 }

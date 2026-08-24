@@ -19,6 +19,8 @@
 
 #include <openssl/crypto.h>
 
+#include "crypto_internal.h"
+
 #define CRYPTO_EX_DATA_MAX_INDEX 32
 
 struct crypto_ex_data {
@@ -151,6 +153,16 @@ LCRYPTO_ALIAS(CRYPTO_get_ex_new_index);
 void
 CRYPTO_cleanup_all_ex_data(void)
 {
+}
+LCRYPTO_ALIAS(CRYPTO_cleanup_all_ex_data);
+
+/*
+ * Free process-wide ex_data state during OPENSSL_cleanup(). The caller must
+ * ensure that no other thread is using libcrypto.
+ */
+void
+crypto_ex_data_cleanup(void)
+{
 	struct crypto_ex_data_class *class;
 	int i, j;
 
@@ -173,7 +185,6 @@ CRYPTO_cleanup_all_ex_data(void)
 	free(classes);
 	classes = NULL;
 }
-LCRYPTO_ALIAS(CRYPTO_cleanup_all_ex_data);
 
 static void
 crypto_ex_data_clear(CRYPTO_EX_DATA *exdata)

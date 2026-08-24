@@ -264,8 +264,7 @@ main(int argc, char **argv)
 	failed |= ex_data_test();
 	failed |= ex_new_index_test();
 
-	/* Force a clean up. */
-	CRYPTO_cleanup_all_ex_data();
+	OPENSSL_cleanup();
 
 	return failed;
 }

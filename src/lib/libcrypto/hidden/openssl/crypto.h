@@ -35,7 +35,7 @@ LCRYPTO_USED(CRYPTO_dup_ex_data);
 LCRYPTO_USED(CRYPTO_free_ex_data);
 LCRYPTO_USED(CRYPTO_set_ex_data);
 LCRYPTO_USED(CRYPTO_get_ex_data);
-LCRYPTO_USED(CRYPTO_cleanup_all_ex_data);
+LCRYPTO_UNUSED(CRYPTO_cleanup_all_ex_data);
 LCRYPTO_USED(CRYPTO_lock);
 LCRYPTO_USED(CRYPTO_add_lock);
 LCRYPTO_USED(CRYPTO_set_mem_functions);

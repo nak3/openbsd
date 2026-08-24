@@ -431,10 +431,8 @@ main(int argc, char **argv)
 	}
 	fclose(f);
 
-	EVP_cleanup();
-	CRYPTO_cleanup_all_ex_data();
 	ERR_remove_thread_state(NULL);
-	ERR_free_strings();
+	OPENSSL_cleanup();
 
 	return 0;
 }

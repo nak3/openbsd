@@ -107,7 +107,7 @@ OPENSSL_cleanup(void)
 	/* This currently calls init... */
 	ERR_free_strings();
 
-	CRYPTO_cleanup_all_ex_data();
+	crypto_ex_data_cleanup();
 	EVP_cleanup();
 
 	X509_VERIFY_PARAM_table_cleanup();

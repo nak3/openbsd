@@ -668,9 +668,8 @@ main(int argc, char *argv[])
 
 	prime_field_tests();
 
-	CRYPTO_cleanup_all_ex_data();
-	ERR_free_strings();
 	ERR_remove_thread_state(NULL);
+	OPENSSL_cleanup();
 
 	return 0;
 }

@@ -299,5 +299,6 @@ crypto_ror_u64(uint64_t v, size_t shift)
 #endif
 
 void crypto_cpu_caps_init(void);
+void crypto_ex_data_cleanup(void);
 
 #endif

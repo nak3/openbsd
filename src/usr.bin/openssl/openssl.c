@@ -360,10 +360,6 @@ openssl_shutdown(void)
 	CONF_modules_unload(1);
 	destroy_ui();
 	OBJ_cleanup();
-	EVP_cleanup();
-	CRYPTO_cleanup_all_ex_data();
-	ERR_remove_thread_state(NULL);
-	ERR_free_strings();
 }
 
 int
@@ -461,6 +457,9 @@ main(int argc, char **argv)
 		BIO_free(bio_err);
 		bio_err = NULL;
 	}
+	ERR_remove_thread_state(NULL);
+	OPENSSL_cleanup();
+
 	return (ret);
 }
 
