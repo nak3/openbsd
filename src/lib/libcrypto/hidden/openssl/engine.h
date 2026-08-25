@@ -25,24 +25,24 @@
 #endif
 #include "crypto_namespace.h"
 
-LCRYPTO_USED(ENGINE_load_builtin_engines);
-LCRYPTO_USED(ENGINE_load_dynamic);
-LCRYPTO_USED(ENGINE_load_openssl);
-LCRYPTO_USED(ENGINE_register_all_complete);
-LCRYPTO_USED(ENGINE_cleanup);
-LCRYPTO_USED(ENGINE_new);
-LCRYPTO_USED(ENGINE_free);
-LCRYPTO_USED(ENGINE_init);
-LCRYPTO_USED(ENGINE_finish);
-LCRYPTO_USED(ENGINE_by_id);
-LCRYPTO_USED(ENGINE_get_id);
-LCRYPTO_USED(ENGINE_get_name);
-LCRYPTO_USED(ENGINE_set_default);
-LCRYPTO_USED(ENGINE_get_default_RSA);
-LCRYPTO_USED(ENGINE_set_default_RSA);
-LCRYPTO_USED(ENGINE_ctrl_cmd);
-LCRYPTO_USED(ENGINE_ctrl_cmd_string);
-LCRYPTO_USED(ENGINE_load_private_key);
-LCRYPTO_USED(ENGINE_load_public_key);
+LCRYPTO_UNUSED(ENGINE_load_builtin_engines);
+LCRYPTO_UNUSED(ENGINE_load_dynamic);
+LCRYPTO_UNUSED(ENGINE_load_openssl);
+LCRYPTO_UNUSED(ENGINE_register_all_complete);
+LCRYPTO_UNUSED(ENGINE_cleanup);
+LCRYPTO_UNUSED(ENGINE_new);
+LCRYPTO_UNUSED(ENGINE_free);
+LCRYPTO_UNUSED(ENGINE_init);
+LCRYPTO_UNUSED(ENGINE_finish);
+LCRYPTO_UNUSED(ENGINE_by_id);
+LCRYPTO_UNUSED(ENGINE_get_id);
+LCRYPTO_UNUSED(ENGINE_get_name);
+LCRYPTO_UNUSED(ENGINE_set_default);
+LCRYPTO_UNUSED(ENGINE_get_default_RSA);
+LCRYPTO_UNUSED(ENGINE_set_default_RSA);
+LCRYPTO_UNUSED(ENGINE_ctrl_cmd);
+LCRYPTO_UNUSED(ENGINE_ctrl_cmd_string);
+LCRYPTO_UNUSED(ENGINE_load_private_key);
+LCRYPTO_UNUSED(ENGINE_load_public_key);
 
 #endif /* _LIBCRYPTO_ENGINE_H */

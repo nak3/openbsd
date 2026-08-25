@@ -762,7 +762,6 @@ end:
 	CRYPTO_cleanup_all_ex_data();
 	ERR_free_strings();
 	ERR_remove_thread_state(NULL);
-	EVP_cleanup();
 	BIO_free(bio_err);
 
 	exit(ret);

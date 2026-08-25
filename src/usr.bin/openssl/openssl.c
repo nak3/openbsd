@@ -347,7 +347,6 @@ openssl_startup(void)
 {
 	signal(SIGPIPE, SIG_IGN);
 
-	OpenSSL_add_all_algorithms();
 	SSL_library_init();
 	SSL_load_error_strings();
 
@@ -360,7 +359,6 @@ openssl_shutdown(void)
 	CONF_modules_unload(1);
 	destroy_ui();
 	OBJ_cleanup();
-	EVP_cleanup();
 	CRYPTO_cleanup_all_ex_data();
 	ERR_remove_thread_state(NULL);
 	ERR_free_strings();

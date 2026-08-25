@@ -692,7 +692,6 @@ main(int argc, char **argv)
 		/*
 		 * Validate the OCSP response we got back
 		 */
-		OPENSSL_add_all_algorithms_noconf();
 		if (!validate_response(hget->bodypart, hget->bodypartsz,
 			request, castore, host, certfile))
 			exit(1);
@@ -728,7 +727,6 @@ main(int argc, char **argv)
 		/*
 		 * Validate the OCSP staple we read in.
 		 */
-		OPENSSL_add_all_algorithms_noconf();
 		if (!validate_response(instaple, instaplesz,
 			request, castore, host, certfile))
 			exit(1);

@@ -188,15 +188,12 @@ main(int argc,char **argv)
 	unsigned int n;
 	const testdata *test = test_cases;
 
-	OpenSSL_add_all_digests();
-
 	for (n = 0; test->pass != NULL; n++, test++) {
 		test_p5_pbkdf2(n, "sha1", test, sha1_results[n]);
 		test_p5_pbkdf2(n, "sha256", test, sha256_results[n]);
 		test_p5_pbkdf2(n, "sha512", test, sha512_results[n]);
 	}
 
-	EVP_cleanup();
 	CRYPTO_cleanup_all_ex_data();
 	ERR_remove_thread_state(NULL);
 	ERR_free_strings();

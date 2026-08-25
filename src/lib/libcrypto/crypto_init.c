@@ -108,7 +108,6 @@ OPENSSL_cleanup(void)
 	ERR_free_strings();
 
 	CRYPTO_cleanup_all_ex_data();
-	EVP_cleanup();
 
 	X509_VERIFY_PARAM_table_cleanup();
 
