@@ -339,9 +339,6 @@ main(int argc, char **argv)
 	}
 
 	/* Load up the software EVP_CIPHER and EVP_MD definitions */
-	OpenSSL_add_all_ciphers();
-	OpenSSL_add_all_digests();
-
 	for (;;) {
 		char line[8 * 1024];
 		char *p;

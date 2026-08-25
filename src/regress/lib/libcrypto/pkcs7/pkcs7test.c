@@ -138,8 +138,6 @@ pkcs7_basics(void)
 	int flags;
 
 	ERR_load_crypto_strings();
-	OpenSSL_add_all_algorithms();
-
 	/*
 	 * A bunch of setup...
 	 */

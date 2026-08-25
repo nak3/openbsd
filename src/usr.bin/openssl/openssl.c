@@ -347,7 +347,6 @@ openssl_startup(void)
 {
 	signal(SIGPIPE, SIG_IGN);
 
-	OpenSSL_add_all_algorithms();
 	SSL_library_init();
 	SSL_load_error_strings();
 
