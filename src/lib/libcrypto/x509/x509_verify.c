@@ -1145,16 +1145,15 @@ x509_verify(struct x509_verify_ctx *ctx, X509 *leaf, char *name)
 		ctx->xsc->current_cert = leaf;
 	}
 
+	if (!x509_verify_cert_cache_extensions(leaf)) {
+		ctx->error = X509_V_ERR_OUT_OF_MEM;	/* XXX */
+		goto err;
+	}
+
 	if ((current_chain = x509_verify_chain_new()) == NULL) {
 		ctx->error = X509_V_ERR_OUT_OF_MEM;
 		goto err;
 	}
-
-        if (!x509_verify_cert_cache_extensions(leaf)) {
-		ctx->error = X509_V_ERR_OUT_OF_MEM;	/* XXX */
-		x509_verify_chain_free(current_chain);
-		goto err;
-        }
 
 	/*
 	 * Add the leaf to the chain and try to build chains from it.
